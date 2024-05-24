@@ -1,0 +1,46 @@
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        link(rel="stylesheet", href="./css/style.css")
+        script(src="./main.js", defer) 
+        title IP Calculator
+    body
+        .container
+            .terminal.kali-linux 
+                .terminal-header
+                    .terminal-header-title
+                        h1 IP Calculator
+                    .header-icons
+                        .maximize
+                            span.maximize-btn
+                                span.maximize-btn-line
+                                span.maximize-btn-line
+                        .minimize 
+                            span.minimize-btn
+                                span.minimize-btn-line
+                        .close
+                            span.close-btn
+                                span.close-btn-line
+                                span.close-btn-line
+                        
+                .terminal-body
+                    .ps1 
+                        span.terminal-user
+                            | user
+                        span.terminal-at
+                            | @
+                        span.terminal-host
+                            | kali
+                        span.terminal-dir
+                            | ~
+                        span.terminal-dlr
+                            | $
+
+                    .terminal-input
+                        span.terminal-input-text
+                            | ip addr
+                        span.terminal-input-cursor
+                            | _
+                    input(type="text", id="ip", placeholder="Enter IP Address")
