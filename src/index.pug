@@ -11,7 +11,7 @@ html(lang="en")
             .terminal.kali-linux 
                 .terminal-header
                     .terminal-header-title
-                        h1 IP Calculator
+                        p IP Calculator
                     .header-icons
                         .maximize
                             span.maximize-btn
@@ -44,3 +44,67 @@ html(lang="en")
                         span.terminal-input-cursor
                             | _
                     input(type="text", id="ip", placeholder="Enter IP Address")
+        
+        .container
+            .ip-classes 
+                .ip-classes-header
+                    h2 IP Classes ( IPv4 )
+                    p IP addresses are divided into five classes: A, B, C, D, and E. Each class has a range
+                    p A, B, C - Unicast
+                    p D - Multicast
+                    p E - Experimental
+                .ip-classes-body
+                    .ip-class
+                        h3 Class A (Network: 1-126)
+                        p
+                            span.networks(title="Networks") 00000000.
+                            span.hosts(title="Hosts") 00000000.00000000.00000000
+                        p Class A IP addresses range from 00000000 to 01111111 in the first octet (X.x.x.x). The remaining three octets can be used for host addresses.
+                        p Class A IP addresses are used for very large networks, such as a major international corporation might have.
+                        h4 Exceptions
+                        p 127 is reserved for loopback and is not a valid IP address.
+                        p 0 is reserved for default route and is not a valid IP address.
+                        h4 Examples 
+                        p 
+                            span.networks 10.
+                            span.hosts 1.1.1
+                    .ip-class
+                        h3 Class B (Network: 128-191)
+                        p 
+                            span.networks 00000000.00000000.
+                            span.hosts 00000000.00000000
+                        p Class B IP addresses range from 10000000 to 10111111 in the first octet (X.x.x.x). The remaining two octets can be used for host addresses.
+                        p Class B IP addresses are used for medium-sized networks, such as a university campus might have.
+                        h4 Examples
+                        p 
+                            span.networks 172.16.
+                            span.hosts 1.1
+                    .ip-class
+                        h3 Class C (Network: 192-223)
+                        p 
+                            span.networks 00000000.00000000.00000000.
+                            span.hosts 00000000
+                        p Class C IP addresses range from 11000000 to 11011111 in the first octet (X.x.x.x). The remaining octet can be used for host addresses.
+                        p Class C IP addresses are used for small networks, such as a small business or a home network might have.
+                        h4 Examples
+                        p 
+                            span.networks 192.168.1.
+                            span.hosts 1
+                    .ip-class
+                        h3 Class D (Multicast: 224-239)
+                        p Class D IP addresses range from 11100000 to 11101111 in the first octet (X.x.x.x). These addresses are reserved for multicast groups.
+                        p Multicast addresses are used to send one packet to many hosts. Multicast addresses are used in routing protocols and other network protocols, and are not routable over the public Internet.
+                        h4 Examples
+                        p 
+                            span.networks 224.0.0.
+                            span.hosts 1
+                    .ip-class
+                        h3 Class E (Experimental: 240-255)
+                        p Class E IP addresses range from 11110000 to 11111111 in the first octet (X.x.x.x). These addresses are reserved for experimental use.
+                        p Class E IP addresses are reserved for future use, or for research purposes.
+                        h4 Examples
+                        p 
+                            span.networks 240.0.0.
+                            span.hosts 1
+
+            
