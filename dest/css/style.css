@@ -60,8 +60,7 @@ table {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: "Roboto", sans-serif;
-  padding-top: 20px;
-  padding-bottom: 10px;
+  padding: 10px 0;
 }
 
 h1 {
@@ -78,6 +77,15 @@ h3 {
 
 h4 {
   font-size: 1.25rem;
+}
+
+.ip-class {
+  background-color: rgba(211, 216, 172, 0.4117647059);
+  padding: 15px;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  margin: 15px 0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .terminal {
