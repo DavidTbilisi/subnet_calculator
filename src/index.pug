@@ -46,7 +46,7 @@ html(lang="en")
                     input(type="text", id="ip", placeholder="Enter IP Address")
         
         .container
-            .ip-classes 
+            section.ip-classes 
                 .ip-classes-header
                     h2 IP Classes ( IPv4 )
                     p IP addresses are divided into five classes: A, B, C, D, and E. Each class has a range
@@ -106,5 +106,66 @@ html(lang="en")
                         p 
                             span.networks 240.0.0.
                             span.hosts 1
-
-            
+        .container
+            section.tcp-headers
+                h2 TCP Headers
+                p RFC 793 - Transmission Control Protocol (TCP) is a connection-oriented protocol that provides reliable, ordered, and error-checked delivery of a stream of octets between applications running on hosts communicating over an IP network. TCP is used by application protocols such as HTTP, SMTP, Telnet, and FTP.
+                br
+                .header-grid
+                    span(title="Byte👇 / Bit👉")
+                    span 0
+                    span 1
+                    span 2
+                    span 3
+                    span 4
+                    span 5
+                    span 6
+                    span 7
+                    span 8
+                    span 9
+                    span 10
+                    span 11
+                    span 12
+                    span 13
+                    span 14
+                    span 15
+                    span 16
+                    span 17
+                    span 18
+                    span 19
+                    span 20
+                    span 21
+                    span 22
+                    span 23
+                    span 24
+                    span 25
+                    span 26
+                    span 27
+                    span 28
+                    span 29
+                    span 30
+                    span 31
+                    span.bit1.tcp-row 0
+                    span.bit16(title='Where comunication is comming from') Source Port Number
+                    span.bit16(title='Where comunication is headed to') Destination Port Number
+                    span.bit1.tcp-row  4
+                    span.bit32(title='Order of packets') Sequence Number
+                    span.bit1.tcp-row  8
+                    span.bit32(title='Support segment ordering and also facilitate detection of lost segments') Acknowledgment Number
+                    span.bit1.tcp-row  12
+                    span.bit4(title='Specifies the size of the TCP header') Header Length
+                    span.bit6 Reserved
+                    span.bit1(title='Data should be treated with priority over other data') URG
+                    span.bit1(title='Confirm that the data packets have been received') ACK
+                    span.bit1(title='Data should be transmitted immediately, and we do not want to wait to fill the entire TCP segment') PSH
+                    span.bit1(title='When the host receives Reset, it must terminate the connection right away') RST
+                    span.bit1(title='Initiates a new connection') SYN
+                    span.bit1(title='Signals the normal closing of a connection') FIN
+                    span.bit16 Window Size
+                    span.bit1.tcp-row  16
+                    span.bit16 TCP Checksum
+                    span.bit16 Urgent Pointer
+                    span.bit1.tcp-row  20
+                    span.bit32 Options (if any, variable length, padded with zeros to make a multiple of 32 bits)
+                    span.bit1.tcp-row  24
+                    span.bit32 Data (if any)
