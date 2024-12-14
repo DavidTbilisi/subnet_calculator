@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build-js": "tsc",
+    "watch-js": "tsc -w",
+    "watch-pug": "pug -w src -P -o dist",
+    "watch": "npm run watch-js && npm run watch-pug",
     "test": "jest",
     "test:watch": "jest --watch"
   },

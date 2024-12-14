@@ -1,0 +1,217 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+
+body {
+  line-height: 1;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+blockquote, q {
+  quotes: none;
+}
+
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: "";
+  content: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 10px auto 0 auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Roboto", sans-serif;
+  padding: 10px 0;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+.ip-class {
+  background-color: rgba(211, 216, 172, 0.4117647059);
+  padding: 15px;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  margin: 15px 0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.terminal {
+  display: grid;
+  grid-template-rows: 40px 1fr;
+  background-color: #1a1c1c;
+  color: #fff;
+  border: 2px solid #333;
+  border-radius: 0.5rem;
+  font-family: "Courier New", Courier, monospace;
+  min-height: 300px;
+}
+
+.networks {
+  color: #e72f2f;
+}
+
+.hosts {
+  color: #2e3cff;
+}
+
+.terminal-header {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  background-color: #333;
+}
+.terminal-header-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+}
+
+.header-icons {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.header-icons .close {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-color: #ff5f56;
+  border-radius: 50%;
+}
+.header-icons .closehover {
+  background-color: #ff5f56;
+}
+.header-icons .minimize {
+  width: 20px;
+  height: 20px;
+  background-color: #ffbd2e;
+  border-radius: 50%;
+}
+.header-icons .maximize {
+  width: 20px;
+  height: 20px;
+  background-color: #27c93f;
+  border-radius: 50%;
+}
+
+.terminal-body {
+  padding: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: #fff;
+  background-color: #1a1c1c;
+  border-top: 2px solid #333;
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+.terminal-body .ps1 {
+  color: #ffbd2e;
+  display: inline-block;
+}
+.terminal-body .terminal-input {
+  display: inline;
+}
+.terminal-body .terminal-input-cursor {
+  animation: blink 1s infinite;
+}
+.terminal-body input {
+  background-color: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  width: 100%;
+}
+.terminal-body input:focus {
+  outline: none;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.tcp-headers {
+  margin-bottom: 200px;
+}
+.tcp-headers .header-grid {
+  display: grid;
+  grid-template-columns: repeat(33, 1fr);
+}
+.tcp-headers .header-grid .bit1 {
+  grid-column: span 1;
+}
+.tcp-headers .header-grid .bit4 {
+  grid-column: span 4;
+}
+.tcp-headers .header-grid .bit6 {
+  grid-column: span 6;
+}
+.tcp-headers .header-grid .bit16 {
+  grid-column: span 16;
+}
+.tcp-headers .header-grid .bit32 {
+  grid-column: span 32;
+}
+.tcp-headers .header-grid span {
+  color: #09355c;
+  box-shadow: 0 0 0px 1px rgb(0, 0, 0);
+  padding: 5px;
+  text-align: center;
+}/*# sourceMappingURL=style.css.map */

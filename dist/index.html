@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="./main.js" defer> </script>
+    <title>IP Calculator</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="terminal kali-linux"> 
+        <div class="terminal-header">
+          <div class="terminal-header-title">
+            <p>IP Calculator</p>
+          </div>
+          <div class="header-icons">
+            <div class="maximize"><span class="maximize-btn"><span class="maximize-btn-line"></span><span class="maximize-btn-line"></span></span></div>
+            <div class="minimize"> <span class="minimize-btn"><span class="minimize-btn-line"></span></span></div>
+            <div class="close"><span class="close-btn"><span class="close-btn-line"></span><span class="close-btn-line"></span></span></div>
+          </div>
+        </div>
+        <div class="terminal-body">
+          <div class="ps1"> <span class="terminal-user">user</span><span class="terminal-at">@</span><span class="terminal-host">kali</span><span class="terminal-dir">~</span><span class="terminal-dlr">$</span></div>
+          <div class="terminal-input"><span class="terminal-input-text">ip addr</span><span class="terminal-input-cursor">_</span></div>
+          <input type="text" id="ip" placeholder="Enter IP Address">
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <section class="ip-classes"> 
+        <div class="ip-classes-header">
+          <h2>IP Classes ( IPv4 )</h2>
+          <p>IP addresses are divided into five classes: A, B, C, D, and E. Each class has a range</p>
+          <p>A, B, C - Unicast</p>
+          <p>D - Multicast</p>
+          <p>E - Experimental</p>
+        </div>
+        <div class="ip-classes-body">
+          <div class="ip-class">
+            <h3>Class A (Network: 1-126)</h3>
+            <p><span class="networks" title="Networks">00000000.</span><span class="hosts" title="Hosts">00000000.00000000.00000000</span></p>
+            <p>Class A IP addresses range from 00000000 to 01111111 in the first octet (X.x.x.x). The remaining three octets can be used for host addresses.</p>
+            <p>Class A IP addresses are used for very large networks, such as a major international corporation might have.</p>
+            <h4>Exceptions</h4>
+            <p>127 is reserved for loopback and is not a valid IP address.</p>
+            <p>0 is reserved for default route and is not a valid IP address.</p>
+            <h4>Examples </h4>
+            <p> <span class="networks">10.</span><span class="hosts">1.1.1</span></p>
+          </div>
+          <div class="ip-class">
+            <h3>Class B (Network: 128-191)</h3>
+            <p> <span class="networks">00000000.00000000.</span><span class="hosts">00000000.00000000</span></p>
+            <p>Class B IP addresses range from 10000000 to 10111111 in the first octet (X.x.x.x). The remaining two octets can be used for host addresses.</p>
+            <p>Class B IP addresses are used for medium-sized networks, such as a university campus might have.</p>
+            <h4>Examples</h4>
+            <p> <span class="networks">172.16.</span><span class="hosts">1.1</span></p>
+          </div>
+          <div class="ip-class">
+            <h3>Class C (Network: 192-223)</h3>
+            <p> <span class="networks">00000000.00000000.00000000.</span><span class="hosts">00000000</span></p>
+            <p>Class C IP addresses range from 11000000 to 11011111 in the first octet (X.x.x.x). The remaining octet can be used for host addresses.</p>
+            <p>Class C IP addresses are used for small networks, such as a small business or a home network might have.</p>
+            <h4>Examples</h4>
+            <p> <span class="networks">192.168.1.</span><span class="hosts">1</span></p>
+          </div>
+          <div class="ip-class">
+            <h3>Class D (Multicast: 224-239)</h3>
+            <p>Class D IP addresses range from 11100000 to 11101111 in the first octet (X.x.x.x). These addresses are reserved for multicast groups.</p>
+            <p>Multicast addresses are used to send one packet to many hosts. Multicast addresses are used in routing protocols and other network protocols, and are not routable over the public Internet.</p>
+            <h4>Examples</h4>
+            <p> <span class="networks">224.0.0.</span><span class="hosts">1</span></p>
+          </div>
+          <div class="ip-class">
+            <h3>Class E (Experimental: 240-255)</h3>
+            <p>Class E IP addresses range from 11110000 to 11111111 in the first octet (X.x.x.x). These addresses are reserved for experimental use.</p>
+            <p>Class E IP addresses are reserved for future use, or for research purposes.</p>
+            <h4>Examples</h4>
+            <p> <span class="networks">240.0.0.</span><span class="hosts">1</span></p>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <section class="tcp-headers">
+        <h2>TCP Headers</h2>
+        <p>RFC 793 - Transmission Control Protocol (TCP) is a connection-oriented protocol that provides reliable, ordered, and error-checked delivery of a stream of octets between applications running on hosts communicating over an IP network. TCP is used by application protocols such as HTTP, SMTP, Telnet, and FTP.</p><br>
+        <div class="header-grid"><span title="Byte👇 / Bit👉"></span><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span class="bit1 tcp-row">0</span><span class="bit16" title="Where comunication is comming from">Source Port Number</span><span class="bit16" title="Where comunication is headed to">Destination Port Number</span><span class="bit1 tcp-row"> 4</span><span class="bit32" title="Order of packets">Sequence Number</span><span class="bit1 tcp-row"> 8</span><span class="bit32" title="Support segment ordering and also facilitate detection of lost segments">Acknowledgment Number</span><span class="bit1 tcp-row"> 12</span><span class="bit4" title="Specifies the size of the TCP header">Header Length</span><span class="bit6">Reserved</span><span class="bit1" title="Data should be treated with priority over other data">URG</span><span class="bit1" title="Confirm that the data packets have been received">ACK</span><span class="bit1" title="Data should be transmitted immediately, and we do not want to wait to fill the entire TCP segment">PSH</span><span class="bit1" title="When the host receives Reset, it must terminate the connection right away">RST</span><span class="bit1" title="Initiates a new connection">SYN</span><span class="bit1" title="Signals the normal closing of a connection">FIN</span><span class="bit16"> <a target="_blank" href="https://www.networkcomputing.com/network-management/network-analysis-tcp-window-size">Window Size</a></span><span class="bit1 tcp-row"> 16</span><span class="bit16">TCP Checksum</span><span class="bit16">Urgent Pointer</span><span class="bit1 tcp-row"> 20</span><span class="bit32">Options (if any, variable length, padded with zeros to make a multiple of 32 bits)</span><span class="bit1 tcp-row"> 24</span><span class="bit32">Data (if any)</span></div>
+      </section>
+    </div>
+  </body>
+</html>
