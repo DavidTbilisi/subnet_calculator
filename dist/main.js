@@ -24,4 +24,5 @@ const detectIpClass = function (ip) {
         return 'Invalid IP';
     }
 };
+
 exports.detectIpClass = detectIpClass;
