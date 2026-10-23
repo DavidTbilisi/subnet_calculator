@@ -8,6 +8,8 @@ An IPv4 and IPv6 subnet calculator that runs in the browser.
 - **Tools**: summarize routes into the fewest CIDR blocks, turn an address range into CIDR blocks, and check whether an address is in a network.
 - **Shareable links**: the address, parent prefix, mode and VLSM plan are kept in the URL, so a copied link reopens the same view.
 - **Reference**: IPv4 address classes and the TCP header layout (RFC 9293).
+- **3D grid**: drag to rotate, pinch or Ctrl + scroll to zoom, click a block or table row to select its subnet. When the grid has focus, the arrow keys rotate, + and - zoom, [ and ] step through subnets, and Enter selects.
+- **Light and dark themes**: the page follows the system setting until you pick one with the toggle in the terminal header.
 
 ## Development
 

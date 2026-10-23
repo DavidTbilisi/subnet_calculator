@@ -3,6 +3,7 @@ import { classfulPrefix, intToIp, parseCidr, planVlsm, prefixToMask, subnetInfo,
 import type { VlsmRequest } from './subnet';
 import { formatIpv6, parseIpv6, subnetInfo6, subnetWindow6 } from './ipv6';
 import { SubnetScene } from './subnet3d';
+import { initTheme, themeColor } from './theme';
 import { initTools } from './tools';
 import { decodeState, encodeState } from './urlState';
 import type { PageState } from './urlState';
@@ -34,6 +35,7 @@ const vlsmCaption = document.getElementById('vlsm-caption') as HTMLElement;
 const vlsmCsvButton = document.getElementById('vlsm-csv') as HTMLButtonElement;
 const vlsmTableWrap = document.getElementById('vlsm-table-wrap') as HTMLElement;
 const vlsmRows = document.getElementById('vlsm-rows') as HTMLElement;
+const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 
 // the rest of the page still works if WebGL is unavailable
 let scene: SubnetScene | null = null;
@@ -64,6 +66,11 @@ let family: 4 | 6 = 4;
 let parentOverride: number | null = null;
 let mode: PageState['mode'] = 'equal';
 const requests: VlsmRequest[] = [];
+
+// the CIDR of each row of the equal-subnets table, so clicking a subnet can load it
+let equalSubnetCidr: (group: number) => string = () => exampleCidr;
+// the VLSM subnet pinned by a click, or -1
+let pinnedVlsm = -1;
 
 // the tables as shown, for CSV export
 let subnetCsv = { filename: '', rows: [] as string[][] };
@@ -136,6 +143,7 @@ const renderSubnetting = function(ip: number, prefix: number, parentPrefix: numb
     const info = subnetInfo(layout.blockNetwork + i * subnetSize, prefix);
     return [formatCount(firstIndex + i + 1), `${intToIp(info.network)}/${prefix}`, `${intToIp(info.firstHost)} - ${intToIp(info.lastHost)}`, intToIp(info.broadcast)];
   }), ipSubnet, parentCidr);
+  equalSubnetCidr = group => `${intToIp(layout.blockNetwork + group * subnetSize)}/${prefix}`;
 
   // label the tiles while there are few enough to read
   const labels = layout.subnetCount <= 16
@@ -165,6 +173,7 @@ const renderSubnetting6 = function(ip: bigint, prefix: number, parentPrefix: num
     const info = subnetInfo6(slice.blockNetwork + BigInt(i) * subnetSize, prefix);
     return [(slice.firstIndex + BigInt(i) + 1n).toLocaleString('en-US'), `${formatIpv6(info.network)}/${prefix}`, formatIpv6(info.last)];
   }), ipSubnet, parentCidr);
+  equalSubnetCidr = group => `${formatIpv6(slice.blockNetwork + BigInt(group) * subnetSize)}/${prefix}`;
 }
 
 const showVlsmError = function(message: string): void {
@@ -228,6 +237,7 @@ const renderVlsm = function(): void {
   if (scene) {
     scene.update(vlsmCells(plan.blocks), labels);
   }
+  pinnedVlsm = -1;
 }
 
 // one editable row per requested subnet
@@ -280,9 +290,24 @@ const highlightRow = function(group: number): void {
   }
 }
 
+// clicking a subnet loads it into the terminal in equal mode, and pins it (or unpins it) in VLSM
+const selectGroup = function(group: number): void {
+  if (mode === 'equal') {
+    if (group >= 0) {
+      ipInput.value = equalSubnetCidr(group);
+      update();
+    }
+    return;
+  }
+  pinnedVlsm = group === pinnedVlsm ? -1 : group;
+  Array.from(vlsmRows.children).forEach((row, i) => row.classList.toggle('selected', i === pinnedVlsm));
+  scene?.pinGroup(pinnedVlsm);
+}
+
 // hovering a subnet in the 3D grid or the table highlights it in both
 if (scene) {
   scene.onHoverGroup = highlightRow;
+  scene.onSelectGroup = selectGroup;
 }
 [rows, vlsmRows].forEach(tbody => {
   tbody.addEventListener('mouseover', function(e) {
@@ -291,6 +316,12 @@ if (scene) {
     tbody.querySelectorAll('.hovered').forEach(other => other.classList.remove('hovered'));
     row?.classList.add('hovered');
     scene?.highlightGroup(group);
+  });
+  tbody.addEventListener('click', function(e) {
+    const row = (e.target as HTMLElement).closest('tr');
+    if (row) {
+      selectGroup(Array.from(tbody.children).indexOf(row));
+    }
   });
   tbody.addEventListener('mouseleave', function() {
     highlightRow(-1);
@@ -448,3 +479,4 @@ window.addEventListener('hashchange', () => applyState(decodeState(location.hash
 
 applyState(decodeState(location.hash, defaults));
 initTools();
+initTheme(themeToggle, () => scene?.setBackground(themeColor('--scene-bg')));

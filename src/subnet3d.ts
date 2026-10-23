@@ -26,6 +26,8 @@ const tileGap = 1.2;
 export class SubnetScene {
   // called with the subnet under the pointer, or -1
   onHoverGroup: (group: number) => void = () => {};
+  // called with the subnet clicked or chosen with Enter, or -1 for a click on empty space
+  onSelectGroup: (group: number) => void = () => {};
 
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -39,12 +41,16 @@ export class SubnetScene {
   private groups: number[] = [];
   private groupLabels: GroupLabel[] = [];
   private highlighted = -1;
+  // stays lit while nothing is hovered
+  private pinned = -1;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private azimuth = 0.4;
   private polar = 0.95;
   private distance = 30;
   private currentDistance = 30;
+  // multiplies the distance; below 1 is closer
+  private zoom = 1;
   private frame = 0;
 
   // throws when WebGL is unavailable
@@ -85,14 +91,36 @@ export class SubnetScene {
     this.setGroupLabels(cells, groupLabels);
     this.highlightGroup(-1);
     this.distance = Math.max(width, depth) * 1.4 + 5;
+    this.pinned = -1;
     this.requestRender();
   }
 
-  // lights up every block of a subnet; -1 clears the highlight
+  // lights up every block of a subnet; -1 falls back to the pinned subnet, if any
   highlightGroup(group: number): void {
     this.highlighted = group;
-    this.blocks.forEach((block, i) => block.material.emissive.setHex(this.groups[i] === group ? 0x555555 : 0x000000));
-    this.groupLabels.forEach(label => label.element.classList.toggle('active', label.group === group));
+    const lit = group >= 0 ? group : this.pinned;
+    this.blocks.forEach((block, i) => block.material.emissive.setHex(this.groups[i] === lit ? 0x555555 : 0x000000));
+    this.groupLabels.forEach(label => label.element.classList.toggle('active', label.group === lit));
+    this.requestRender();
+  }
+
+  // keeps a subnet lit until another is pinned; -1 unpins
+  pinGroup(group: number): void {
+    this.pinned = group;
+    this.highlightGroup(this.highlighted);
+  }
+
+  setBackground(color: number): void {
+    this.renderer.setClearColor(color);
+    this.requestRender();
+  }
+
+  private get groupCount(): number {
+    return this.groups.length === 0 ? 0 : Math.max(...this.groups) + 1;
+  }
+
+  private setZoom(zoom: number): void {
+    this.zoom = Math.min(Math.max(zoom, 0.4), 3);
     this.requestRender();
   }
 
@@ -153,7 +181,7 @@ export class SubnetScene {
     this.currentDistance = ease(this.currentDistance, this.distance);
 
     // back off on narrow screens so the grid still fits horizontally
-    const distance = this.currentDistance / Math.min(this.camera.aspect, 1);
+    const distance = this.currentDistance * this.zoom / Math.min(this.camera.aspect, 1);
     this.camera.position.setFromSphericalCoords(distance, this.polar, this.azimuth);
     this.camera.lookAt(0, 1, 0);
     this.renderer.render(this.scene, this.camera);
@@ -185,38 +213,125 @@ export class SubnetScene {
     this.requestRender();
   }
 
-  // drag to orbit, hover a block for its label
+  // drag to orbit, pinch or Ctrl + scroll to zoom, hover a block for its label, click it to select its subnet
   private bindPointer(): void {
     const canvas = this.renderer.domElement;
-    let drag: { x: number; y: number } | null = null;
+    const pointers = new Map<number, { x: number; y: number }>();
+    // where the only pointer went down, until it moves too far to count as a click
+    let click: { x: number; y: number } | null = null;
+    let pinch = 0;
+
+    const fingerDistance = (): number => {
+      const [a, b] = [...pointers.values()];
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    };
 
     canvas.addEventListener('pointerdown', e => {
-      drag = { x: e.clientX, y: e.clientY };
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       canvas.setPointerCapture(e.pointerId);
+      click = pointers.size === 1 ? { x: e.clientX, y: e.clientY } : null;
+      pinch = pointers.size === 2 ? fingerDistance() : 0;
       this.setHovered(-1);
     });
-    canvas.addEventListener('pointerup', () => drag = null);
-    canvas.addEventListener('pointercancel', () => drag = null);
+    const release = (e: PointerEvent): void => {
+      pointers.delete(e.pointerId);
+      pinch = 0;
+    };
+    canvas.addEventListener('pointerup', e => {
+      if (click && pointers.size === 1) {
+        this.onSelectGroup(this.groupAt(e));
+      }
+      click = null;
+      release(e);
+    });
+    canvas.addEventListener('pointercancel', e => {
+      click = null;
+      release(e);
+    });
     canvas.addEventListener('pointerleave', () => this.setHovered(-1));
     canvas.addEventListener('pointermove', e => {
-      if (drag) {
-        this.azimuth -= (e.clientX - drag.x) * 0.01;
-        this.polar = Math.min(Math.max(this.polar - (e.clientY - drag.y) * 0.01, 0.2), 1.45);
-        drag = { x: e.clientX, y: e.clientY };
-        this.requestRender();
-      } else {
+      const last = pointers.get(e.pointerId);
+      if (!last) {
         this.hover(e);
+        return;
+      }
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (click && Math.hypot(e.clientX - click.x, e.clientY - click.y) >= 4) {
+        click = null;
+      }
+
+      if (pointers.size === 2 && pinch > 0) {
+        const distance = fingerDistance();
+        this.setZoom(this.zoom * pinch / distance);
+        pinch = distance;
+      } else if (pointers.size === 1) {
+        this.orbit(e.clientX - last.x, e.clientY - last.y);
       }
     });
+    // a plain wheel keeps scrolling the page; trackpad pinches arrive as Ctrl + wheel
+    canvas.addEventListener('wheel', e => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        // a mouse wheel notch (about 100) is capped so it zooms as much as a short pinch
+        this.setZoom(this.zoom * Math.exp(Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 20) * 0.01));
+      }
+    }, { passive: false });
+
+    this.container.addEventListener('keydown', e => this.key(e));
   }
 
-  private hover(e: PointerEvent): void {
+  private orbit(dx: number, dy: number): void {
+    this.azimuth -= dx * 0.01;
+    this.polar = Math.min(Math.max(this.polar - dy * 0.01, 0.2), 1.45);
+    this.requestRender();
+  }
+
+  // arrows orbit, + and - zoom, [ and ] step through the subnets, Enter selects the highlighted one
+  private key(e: KeyboardEvent): void {
+    const count = this.groupCount;
+    const step = (by: number): void => {
+      if (count > 0) {
+        const group = this.highlighted < 0 ? (by > 0 ? 0 : count - 1) : (this.highlighted + by + count) % count;
+        this.highlightGroup(group);
+        this.onHoverGroup(group);
+      }
+    };
+    const actions: { [key: string]: () => void } = {
+      ArrowLeft: () => this.orbit(-15, 0),
+      ArrowRight: () => this.orbit(15, 0),
+      ArrowUp: () => this.orbit(0, -10),
+      ArrowDown: () => this.orbit(0, 10),
+      '+': () => this.setZoom(this.zoom / 1.15),
+      '=': () => this.setZoom(this.zoom / 1.15),
+      '-': () => this.setZoom(this.zoom * 1.15),
+      '[': () => step(-1),
+      ']': () => step(1),
+      Enter: () => this.highlighted >= 0 && this.onSelectGroup(this.highlighted),
+    };
+    if (e.key in actions && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      actions[e.key]();
+    }
+  }
+
+  // the subnet of the block under the pointer, or -1
+  private groupAt(e: PointerEvent): number {
+    const index = this.blockAt(e);
+    return index >= 0 ? this.groups[index] : -1;
+  }
+
+  private blockAt(e: PointerEvent): number {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.pointer.set((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1);
     this.raycaster.setFromCamera(this.pointer, this.camera);
 
     const hit = this.raycaster.intersectObjects(this.blocks.filter(block => block.visible))[0];
-    const index = hit ? this.blocks.indexOf(hit.object as Block) : -1;
+    return hit ? this.blocks.indexOf(hit.object as Block) : -1;
+  }
+
+  private hover(e: PointerEvent): void {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const index = this.blockAt(e);
     this.setHovered(index);
 
     if (index >= 0) {

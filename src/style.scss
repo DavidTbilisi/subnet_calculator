@@ -1,5 +1,67 @@
 @use "reset";
 
+// colors of everything on the page background; the terminal, 3D view and tooltips are dark in both themes
+@mixin light-theme {
+    color-scheme: light;
+    --bg: #fff;
+    --text: #000;
+    --muted: #555;
+    --card: #d3d8ac69;
+    --card-shadow: rgba(0,0,0,0.1);
+    --network-text: #e72f2f;
+    --hosts-text: #2e3cff;
+    --tcp-text: #09355c;
+    --tcp-border: #000;
+    --control-bg: #fff;
+    --control-border: #999;
+    --border: #ccc;
+    --border-strong: #666;
+    --frame: #333;
+    --row-alt: #d3d8ac69;
+    --row-hover: #c9cdff;
+    --scene-bg: #1a1c1c;
+}
+
+@mixin dark-theme {
+    color-scheme: dark;
+    --bg: #121414;
+    --text: #e6e6e6;
+    --muted: #a0a6a6;
+    --card: #262a20;
+    --card-shadow: rgba(0,0,0,0.4);
+    --network-text: #ff6b6b;
+    --hosts-text: #8f98ff;
+    --tcp-text: #9ecbff;
+    --tcp-border: #555;
+    --control-bg: #1f2222;
+    --control-border: #666;
+    --border: #3a3e3e;
+    --border-strong: #888;
+    --frame: #555;
+    --row-alt: #20231b;
+    --row-hover: #2f3570;
+    --scene-bg: #0d0f0f;
+}
+
+:root {
+    @include light-theme;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        @include dark-theme;
+    }
+}
+
+:root[data-theme="dark"] {
+    @include dark-theme;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
 .container {
     width: 100%;
     max-width: 1600px;
@@ -25,12 +87,12 @@ h4 {
 }
 
 .ip-class{
-    background-color: #d3d8ac69;
+    background-color: var(--card);
     padding: 15px;
     border-radius: 5px;
     font-size: 1.2rem;
     margin: 15px 0 ;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: 0 0 10px var(--card-shadow);
 
 }
 
@@ -46,21 +108,38 @@ h4 {
     min-height: 300px;
 }
 .networks{
-    color: #e72f2f;
+    color: var(--network-text);
 }
 .hosts{
-    color: #2e3cff;
+    color: var(--hosts-text);
 }
 
 .terminal-header {
     display: grid;
-    grid-template-columns: 1fr 100px;
+    grid-template-columns: 1fr auto 100px;
+    align-items: center;
     background-color: #333;
     &-title {
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 1.5rem;
+    }
+}
+
+.theme-toggle {
+    width: 32px;
+    height: 28px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+
+    &:hover, &:focus-visible {
+        border-color: #ffbd2e;
+        color: #ffbd2e;
     }
 }
 
@@ -172,8 +251,8 @@ h4 {
         }
 
         span {
-            color: #09355c;
-            box-shadow: 0 0 0px 1px rgb(0 0 0);
+            color: var(--tcp-text);
+            box-shadow: 0 0 0px 1px var(--tcp-border);
             padding: 5px;
             text-align: center;
 
@@ -231,14 +310,14 @@ $host-color: #2e3cff;
             display: none;
         }
         #vlsm-caption {
-            color: $network-color;
+            color: var(--network-text);
         }
     }
 
     .subnet-modes {
         display: inline-flex;
         margin-bottom: 15px;
-        border: 2px solid #333;
+        border: 2px solid var(--frame);
         border-radius: 0.5rem;
         overflow: hidden;
     }
@@ -246,14 +325,14 @@ $host-color: #2e3cff;
     .subnet-mode {
         padding: 6px 16px;
         border: none;
-        background-color: #fff;
-        color: #1a1c1c;
+        background-color: var(--control-bg);
+        color: var(--text);
         font-family: 'Courier New', Courier, monospace;
         font-size: 1rem;
         cursor: pointer;
 
         &[aria-pressed="true"] {
-            background-color: #333;
+            background-color: var(--frame);
             color: #fff;
         }
 
@@ -266,8 +345,10 @@ $host-color: #2e3cff;
     .vlsm-panel {
         input {
             padding: 4px 8px;
-            border: 1px solid #999;
+            border: 1px solid var(--control-border);
             border-radius: 4px;
+            background-color: var(--control-bg);
+            color: var(--text);
             font-family: 'Courier New', Courier, monospace;
             font-size: 1rem;
         }
@@ -305,9 +386,10 @@ $host-color: #2e3cff;
         button {
             width: 2em;
             height: 2em;
-            border: 1px solid #999;
+            border: 1px solid var(--control-border);
             border-radius: 4px;
-            background-color: #fff;
+            background-color: var(--control-bg);
+            color: var(--text);
             font-size: 1rem;
             cursor: pointer;
 
@@ -321,9 +403,10 @@ $host-color: #2e3cff;
     .vlsm-add {
         margin: 8px 0 12px 0;
         padding: 4px 12px;
-        border: 1px dashed #666;
+        border: 1px dashed var(--border-strong);
         border-radius: 4px;
         background-color: transparent;
+        color: var(--text);
         font-family: 'Courier New', Courier, monospace;
         font-size: 1rem;
         cursor: pointer;
@@ -359,8 +442,10 @@ $host-color: #2e3cff;
         input[type="number"] {
             width: 5em;
             padding: 4px 8px;
-            border: 1px solid #999;
+            border: 1px solid var(--control-border);
             border-radius: 4px;
+            background-color: var(--control-bg);
+            color: var(--text);
             font-family: 'Courier New', Courier, monospace;
             font-size: 1rem;
         }
@@ -477,15 +562,16 @@ $host-color: #2e3cff;
 
     .export-csv {
         padding: 4px 12px;
-        border: 1px solid #999;
+        border: 1px solid var(--control-border);
         border-radius: 4px;
-        background-color: #fff;
+        background-color: var(--control-bg);
+        color: var(--text);
         font-family: 'Courier New', Courier, monospace;
         font-size: 1rem;
         cursor: pointer;
 
         &:hover {
-            border-color: #333;
+            border-color: var(--text);
         }
     }
 
@@ -513,10 +599,15 @@ $host-color: #2e3cff;
     .subnet-3d {
         position: relative;
         height: 480px;
-        background-color: #1a1c1c;
-        border: 2px solid #333;
+        background-color: var(--scene-bg);
+        border: 2px solid var(--frame);
         border-radius: 0.5rem;
         overflow: hidden;
+
+        &:focus-visible {
+            outline: 2px solid $subnet-color;
+            outline-offset: 2px;
+        }
 
         canvas {
             display: block;
@@ -571,13 +662,13 @@ $host-color: #2e3cff;
 
     .subnet-hint {
         font-size: 1rem;
-        color: #555;
+        color: var(--muted);
     }
 
     .subnet-table-wrap {
         max-height: 480px;
         overflow: auto;
-        border: 1px solid #ccc;
+        border: 1px solid var(--border);
         border-radius: 5px;
     }
 
@@ -599,17 +690,21 @@ $host-color: #2e3cff;
             color: #fff;
         }
 
+        tbody tr {
+            cursor: pointer;
+        }
+
         tr:nth-child(even) td {
-            background-color: #d3d8ac69;
+            background-color: var(--row-alt);
         }
 
         tr.free td {
-            color: #666;
+            color: var(--muted);
             font-style: italic;
         }
 
         tr.hovered td {
-            background-color: #c9cdff;
+            background-color: var(--row-hover);
         }
 
         .swatch {
@@ -623,6 +718,7 @@ $host-color: #2e3cff;
 
         tr.selected td {
             background-color: $subnet-color;
+            color: #1a1c1c;
             font-weight: bold;
         }
 
@@ -654,7 +750,7 @@ $host-color: #2e3cff;
 
     .tool {
         padding: 15px;
-        border: 1px solid #ccc;
+        border: 1px solid var(--border);
         border-radius: 5px;
 
         h3 {
@@ -669,7 +765,9 @@ $host-color: #2e3cff;
 
     textarea, input {
         padding: 4px 8px;
-        border: 1px solid #999;
+        background-color: var(--control-bg);
+        color: var(--text);
+        border: 1px solid var(--control-border);
         border-radius: 4px;
         font-family: 'Courier New', Courier, monospace;
         font-size: 1rem;

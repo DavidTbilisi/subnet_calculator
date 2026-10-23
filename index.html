@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      // apply a remembered theme before the first paint (see src/theme.ts)
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch (error) {}
+    </script>
     <script type="module" src="/src/main.ts"></script>
     <title>IP Calculator</title>
   </head>
@@ -13,6 +20,7 @@
           <div class="terminal-header-title">
             <p>IP Calculator</p>
           </div>
+          <button class="theme-toggle" id="theme-toggle" type="button">☾</button>
           <div class="header-icons">
             <div class="maximize"><span class="maximize-btn"><span class="maximize-btn-line"></span><span class="maximize-btn-line"></span></span></div>
             <div class="minimize"> <span class="minimize-btn"><span class="minimize-btn-line"></span></span></div>
@@ -78,12 +86,12 @@
         </div>
         <div class="subnet-view">
           <div class="subnet-3d-wrap">
-            <div class="subnet-3d" id="subnet-3d" role="img" aria-label="3D grid of the subnets; the table lists the same subnets">
+            <div class="subnet-3d" id="subnet-3d" tabindex="0" role="application" aria-label="3D grid of the subnets; the table lists the same subnets" aria-describedby="subnet-hint">
               <div class="subnet-tooltip" id="subnet-tooltip" hidden></div>
             </div>
             <div class="subnet-legend equal-only"><span class="legend legend-ip">Your IP</span><span class="legend legend-subnet">Your subnet</span><span class="legend legend-others">Other subnets</span><span class="legend legend-reserved">Network / broadcast</span></div>
             <div class="subnet-legend vlsm-only"><span class="legend legend-needed">Needed hosts</span><span class="legend legend-spare">Spare hosts</span><span class="legend legend-reserved">Network / broadcast</span><span class="legend legend-free">Free space</span></div>
-            <p class="subnet-hint">Drag to rotate, hover a block or table row to highlight its subnet.</p>
+            <p class="subnet-hint" id="subnet-hint">Drag to rotate, pinch or Ctrl + scroll to zoom. Hover a block or table row to highlight its subnet, click to select it. Keys on the focused grid: arrows rotate, + and - zoom, [ and ] step through subnets, Enter selects.</p>
           </div>
           <div class="subnet-table-wrap equal-only" id="subnet-table-wrap">
             <table class="subnet-table">
