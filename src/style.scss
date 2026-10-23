@@ -131,6 +131,23 @@ h4 {
     #ip-result {
         white-space: pre-wrap;
     }
+
+    .terminal-copy {
+        margin-top: 10px;
+        padding: 2px 12px;
+        border: 1px solid #666;
+        border-radius: 4px;
+        background-color: transparent;
+        color: #fff;
+        font-family: inherit;
+        font-size: 1rem;
+        cursor: pointer;
+
+        &:hover, &:focus-visible {
+            border-color: #ffbd2e;
+            color: #ffbd2e;
+        }
+    }
 }
 
 @keyframes blink {
@@ -187,6 +204,20 @@ $host-color: #2e3cff;
     // each mode shows only its own controls; the 3D view is shared
     &:not(.mode-vlsm) .vlsm-only, &.mode-vlsm .equal-only {
         display: none;
+    }
+
+    &:not(.ipv6) .ipv6-only, &.mode-vlsm .ipv6-only {
+        display: none;
+    }
+
+    // IPv6 shows the caption and table only
+    &.ipv6:not(.mode-vlsm) {
+        .subnet-bits, .subnet-legend, .subnet-3d-wrap {
+            display: none;
+        }
+        .subnet-view {
+            grid-template-columns: 1fr;
+        }
     }
 
     &.subnet-disabled:not(.mode-vlsm) {
@@ -317,10 +348,21 @@ $host-color: #2e3cff;
         gap: 15px;
         margin: 10px 0 15px 0;
 
-        input {
+        flex-wrap: wrap;
+
+        input[type="range"] {
             flex: 1;
             max-width: 500px;
             accent-color: $network-color;
+        }
+
+        input[type="number"] {
+            width: 5em;
+            padding: 4px 8px;
+            border: 1px solid #999;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
         }
 
         output {
@@ -414,6 +456,52 @@ $host-color: #2e3cff;
 
     .subnet-caption {
         font-weight: bold;
+    }
+
+    .caption-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 5px 15px;
+        margin-bottom: 10px;
+
+        .subnet-caption {
+            margin-bottom: 0;
+        }
+    }
+
+    &.mode-vlsm.vlsm-error .export-csv {
+        display: none;
+    }
+
+    .export-csv {
+        padding: 4px 12px;
+        border: 1px solid #999;
+        border-radius: 4px;
+        background-color: #fff;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1rem;
+        cursor: pointer;
+
+        &:hover {
+            border-color: #333;
+        }
+    }
+
+    .vlsm-option {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1rem;
+
+        input {
+            accent-color: $network-color;
+        }
+    }
+
+    input[aria-invalid="true"] {
+        border-color: $network-color;
+        outline: 1px solid $network-color;
     }
 
     .subnet-view {
@@ -550,6 +638,72 @@ $host-color: #2e3cff;
 
         .subnet-3d {
             height: 360px;
+        }
+    }
+}
+
+.tools {
+    font-size: 1.2rem;
+    margin: 15px 0;
+
+    .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .tool {
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+
+        h3 {
+            padding-top: 0;
+        }
+
+        p {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+    }
+
+    textarea, input {
+        padding: 4px 8px;
+        border: 1px solid #999;
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1rem;
+    }
+
+    textarea {
+        width: 100%;
+        resize: vertical;
+    }
+
+    .tool-inputs {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        input {
+            flex: 1;
+            min-width: 10em;
+        }
+    }
+
+    .tool-result {
+        margin-top: 10px;
+        padding: 8px 10px;
+        background-color: #1a1c1c;
+        color: #fff;
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
+        white-space: pre-wrap;
+
+        &.tool-error {
+            color: #ff8a80;
         }
     }
 }

@@ -22,8 +22,9 @@
         <div class="terminal-body">
           <div class="ps1"> <span class="terminal-user">user</span><span class="terminal-at">@</span><span class="terminal-host">kali</span><span class="terminal-dir">~</span><span class="terminal-dlr">$</span></div>
           <div class="terminal-input"><span class="terminal-input-text">ip addr</span><span class="terminal-input-cursor">_</span></div>
-          <input type="text" id="ip" placeholder="Enter IP Address (e.g. 192.168.1.70/26)">
+          <input type="text" id="ip" placeholder="Enter IP Address (e.g. 192.168.1.70/26 or 2001:db8::1/64)" spellcheck="false">
           <p id="ip-result"></p>
+          <button class="terminal-copy" id="ip-copy" type="button" hidden>Copy</button>
         </div>
       </div>
     </div>
@@ -35,16 +36,22 @@
           <button class="subnet-mode" type="button" data-mode="vlsm" aria-pressed="false">VLSM</button>
         </div>
         <div class="equal-only">
-          <p>Subnetting borrows bits from the host part of a classful network to split it into equal smaller networks. Type an address with a prefix in the terminal (e.g. 10.20.30.40/20), or drag the slider.</p>
+          <p>Subnetting borrows bits from the host part of a network to split it into equal smaller networks. Type an address with a prefix in the terminal (e.g. 10.20.30.40/20 or 2001:db8::1/64), or drag the slider. The parent network defaults to the classful one (/48 for IPv6); set the parent prefix to split any block.</p>
           <p class="subnet-note" id="subnet-note"></p>
           <div class="subnet-controls">
             <label for="prefix">Prefix length</label>
             <input id="prefix" type="range" min="0" max="32" value="26">
             <output id="prefix-value" for="prefix">/26</output>
+            <label for="parent">Parent prefix</label>
+            <input id="parent" type="number" min="0" max="32" placeholder="24" title="Prefix of the network being split; leave empty for the default">
           </div>
+          <p class="subnet-note ipv6-only">The bit view and 3D grid are IPv4 only.</p>
           <div class="subnet-bits" id="subnet-bits"></div>
           <div class="subnet-legend"><span class="legend legend-network">Network</span><span class="legend legend-subnet">Subnet (borrowed)</span><span class="legend legend-host">Host</span></div>
-          <p class="subnet-caption" id="subnet-caption"></p>
+          <div class="caption-row">
+            <p class="subnet-caption" id="subnet-caption"></p>
+            <button class="export-csv" id="subnet-csv" type="button">Export CSV</button>
+          </div>
         </div>
         <div class="vlsm-only vlsm-panel">
           <p>VLSM (variable length subnet masking) gives each subnet only the space it needs. Subnets are allocated largest first, so each one starts on a boundary of its own size.</p>
@@ -63,7 +70,11 @@
             <tbody id="vlsm-requests"></tbody>
           </table>
           <button class="vlsm-add" id="vlsm-add" type="button">+ Add subnet</button>
-          <p class="subnet-caption" id="vlsm-caption"></p>
+          <label class="vlsm-option"><input id="vlsm-p31" type="checkbox"> Use /31 for 2-host point-to-point links (RFC 3021)</label>
+          <div class="caption-row">
+            <p class="subnet-caption" id="vlsm-caption"></p>
+            <button class="export-csv" id="vlsm-csv" type="button">Export CSV</button>
+          </div>
         </div>
         <div class="subnet-view">
           <div class="subnet-3d-wrap">
@@ -76,14 +87,7 @@
           </div>
           <div class="subnet-table-wrap equal-only" id="subnet-table-wrap">
             <table class="subnet-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Network</th>
-                  <th>Hosts</th>
-                  <th>Broadcast</th>
-                </tr>
-              </thead>
+              <thead id="subnet-head"></thead>
               <tbody id="subnet-rows"></tbody>
             </table>
           </div>
@@ -100,6 +104,42 @@
               </thead>
               <tbody id="vlsm-rows"></tbody>
             </table>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="container">
+      <section class="tools" id="tools">
+        <h2>Tools</h2>
+        <div class="tool-grid">
+          <div class="tool">
+            <h3>Summarize routes</h3>
+            <p>Merge networks into the fewest CIDR blocks covering exactly the same addresses. Separate them with spaces, commas or new lines.</p>
+            <textarea id="summarize-input" rows="5" spellcheck="false" aria-label="Networks to summarize">10.0.0.0/24
+10.0.1.0/24
+10.0.2.0/24
+10.0.3.128/25</textarea>
+            <pre class="tool-result" id="summarize-result"></pre>
+          </div>
+          <div class="tool">
+            <h3>Range to CIDR</h3>
+            <p>The fewest CIDR blocks covering every address from the first to the last.</p>
+            <div class="tool-inputs">
+              <input id="range-start" type="text" value="192.168.1.10" spellcheck="false" aria-label="First address">
+              <span>to</span>
+              <input id="range-end" type="text" value="192.168.1.100" spellcheck="false" aria-label="Last address">
+            </div>
+            <pre class="tool-result" id="range-result"></pre>
+          </div>
+          <div class="tool">
+            <h3>Contains</h3>
+            <p>Check whether an address is inside a network.</p>
+            <div class="tool-inputs">
+              <input id="contains-ip" type="text" value="10.20.30.40" spellcheck="false" aria-label="Address">
+              <span>in</span>
+              <input id="contains-network" type="text" value="10.16.0.0/12" spellcheck="false" aria-label="Network">
+            </div>
+            <pre class="tool-result" id="contains-result"></pre>
           </div>
         </div>
       </section>

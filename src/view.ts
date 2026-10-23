@@ -3,6 +3,7 @@
 import { intToIp, specialRange, subnetInfo, toBinary, tileLayout, nestedLayout } from './subnet';
 import type { SubnetLayout, VlsmBlock } from './subnet';
 import type { Cell } from './subnet3d';
+import { expandIpv6, formatIpv6, specialRange6, subnetInfo6 } from './ipv6';
 
 // classful class of an address; 0.x and 127.x are 'Reserved'
 export const detectIpClass = function(ip: string): string {
@@ -96,6 +97,26 @@ export const describeSubnet = function(ip: number, prefix: number): string {
   ]);
 }
 
+// terminal output for an IPv6 address in a subnet
+export const describeIpv6 = function(ip: bigint, prefix: number): string {
+  const info = subnetInfo6(ip, prefix);
+  const range = specialRange6(ip);
+  return terminalLines([
+    ['Address', `${formatIpv6(ip)}/${prefix}`],
+    ['Expanded', expandIpv6(ip)],
+    ['Network', `${formatIpv6(info.network)}/${prefix}`],
+    ['Last', formatIpv6(info.last)],
+    ['Size', `2^${128 - prefix} addresses (${info.size.toLocaleString('en-US')})`],
+    ['Scope', range ? `${range.name} ${range.cidr}` : 'Reserved by IANA'],
+  ]);
+}
+
+// RFC 4180 CSV: fields with commas, quotes or line breaks are quoted, quotes doubled
+export const toCsv = function(rows: string[][]): string {
+  const field = (value: string): string => /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+  return rows.map(row => row.map(field).join(',')).join('\r\n') + '\r\n';
+}
+
 // one row of 32 bits split into octets, each bit tagged network / subnet / host
 export const bitRow = function(label: string, value: number, prefix: number, parentPrefix: number): string {
   const bits = toBinary(value);
@@ -157,12 +178,14 @@ export const vlsmCells = function(blocks: VlsmBlock[]): Cell[] {
     if (block.name === null) {
       return { ...placement, color: freeColor, height: 0.15, label };
     }
-    if (cellSize === 1 && (offset === 0 || offset === sizes[group] - 1)) {
+    if (cellSize === 1 && block.prefix <= 30 && (offset === 0 || offset === sizes[group] - 1)) {
       return { ...placement, color: blockColors.reserved, height: 0.4, label: `${label}\n(${offset === 0 ? 'network' : 'broadcast'} address)` };
     }
-    // the offset of a host address is its host number, so anything past the hosts asked for is spare
+    // the offset of a host address is its host number (/31 and /32 have no network address to skip),
+    // so anything past the hosts asked for is spare
+    const host = block.prefix <= 30 ? offset : offset + 1;
     const color = vlsmColors[group % vlsmColors.length];
-    return offset <= block.hosts
+    return host <= block.hosts
       ? { ...placement, color, height: 1.6, label }
       : { ...placement, color, height: 0.6, label: `${label}\n(spare)` };
   });

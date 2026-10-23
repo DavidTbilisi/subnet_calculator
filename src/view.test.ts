@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ipToInt, planVlsm, subnetLayout } from "./subnet";
-import { blockColors, describeScope, describeSubnet, detectIpClass, escapeHtml, freeColor, subnetCells, vlsmCells, vlsmColors } from "./view";
+import { parseIpv6 } from "./ipv6";
+import { blockColors, describeIpv6, describeScope, describeSubnet, detectIpClass, escapeHtml, freeColor, subnetCells, toCsv, vlsmCells, vlsmColors } from "./view";
 
 describe("IP class detection", () => {
   it("should detect classes A to E", () => {
@@ -107,5 +108,39 @@ describe("VLSM cells", () => {
     const bigCells = vlsmCells(big.blocks);
     expect(bigCells).toHaveLength(1024);
     expect(bigCells[0].label).toBe("10.0.0.0 - 10.0.0.63\nA 10.0.0.0/22");
+  });
+});
+
+describe("VLSM cells for /31 links", () => {
+  const plan = planVlsm(ipToInt("10.0.0.0"), 29, [{ name: "A", hosts: 2 }, { name: "B", hosts: 1 }], true);
+  const cells = vlsmCells(plan.blocks);
+
+  it("should not reserve the ends of a /31", () => {
+    expect(cells[0]).toMatchObject({ group: 0, height: 1.6 });
+    expect(cells[1]).toMatchObject({ group: 0, height: 1.6 });
+  });
+
+  it("should count both /31 addresses as hosts", () => {
+    expect(cells[2]).toMatchObject({ group: 1, height: 1.6 });
+    expect(cells[3]).toMatchObject({ group: 1, height: 0.6 });
+  });
+});
+
+describe("IPv6 description", () => {
+  it("should list the subnet's addresses", () => {
+    expect(describeIpv6(parseIpv6("2001:db8::1")!.ip, 64).split("\n")).toEqual([
+      "Address    2001:db8::1/64",
+      "Expanded   2001:0db8:0000:0000:0000:0000:0000:0001",
+      "Network    2001:db8::/64",
+      "Last       2001:db8::ffff:ffff:ffff:ffff",
+      "Size       2^64 addresses (18,446,744,073,709,551,616)",
+      "Scope      Documentation (RFC 3849) 2001:db8::/32",
+    ]);
+  });
+});
+
+describe("CSV", () => {
+  it("should quote fields that need it", () => {
+    expect(toCsv([["a", "b c", "1,000"], ['say "hi"', "line\nbreak", ""]])).toBe('a,b c,"1,000"\r\n"say ""hi""","line\nbreak",\r\n');
   });
 });

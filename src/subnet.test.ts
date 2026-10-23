@@ -169,3 +169,67 @@ describe("Special ranges", () => {
     expect(range("100.128.0.1")).toBeNull();
   });
 });
+
+describe("Range to CIDR", () => {
+  const cidrs = (start: string, end: string) => subnet.rangeToCidrs(subnet.ipToInt(start), subnet.ipToInt(end)).map(block => `${subnet.intToIp(block.network)}/${block.prefix}`);
+
+  it("should cover a range with the fewest aligned blocks", () => {
+    expect(cidrs("192.168.1.10", "192.168.1.100")).toEqual([
+      "192.168.1.10/31", "192.168.1.12/30", "192.168.1.16/28", "192.168.1.32/27", "192.168.1.64/27", "192.168.1.96/30", "192.168.1.100/32",
+    ]);
+    expect(cidrs("10.0.0.0", "10.0.0.255")).toEqual(["10.0.0.0/24"]);
+    expect(cidrs("1.2.3.4", "1.2.3.4")).toEqual(["1.2.3.4/32"]);
+  });
+
+  it("should handle the whole address space", () => {
+    expect(cidrs("0.0.0.0", "255.255.255.255")).toEqual(["0.0.0.0/0"]);
+  });
+});
+
+describe("Summarization", () => {
+  const blocks = (...texts: string[]) => texts.map(text => {
+    const cidr = subnet.parseCidr(text)!;
+    return { network: cidr.ip, prefix: cidr.prefix! };
+  });
+  const text = (list: { network: number; prefix: number }[]) => list.map(block => `${subnet.intToIp(block.network)}/${block.prefix}`);
+
+  it("should merge adjacent blocks", () => {
+    expect(text(subnet.summarize(blocks("10.0.0.0/24", "10.0.1.0/24")))).toEqual(["10.0.0.0/23"]);
+    expect(text(subnet.summarize(blocks("10.0.3.0/24", "10.0.0.0/24", "10.0.2.0/24", "10.0.1.0/24")))).toEqual(["10.0.0.0/22"]);
+  });
+
+  it("should drop covered blocks and keep gaps", () => {
+    expect(text(subnet.summarize(blocks("10.0.0.0/16", "10.0.5.0/24", "10.2.0.0/16")))).toEqual(["10.0.0.0/16", "10.2.0.0/16"]);
+  });
+
+  it("should not merge unaligned neighbours", () => {
+    expect(text(subnet.summarize(blocks("10.0.1.0/24", "10.0.2.0/24")))).toEqual(["10.0.1.0/24", "10.0.2.0/24"]);
+  });
+
+  it("should find the smallest covering supernet", () => {
+    expect(text([subnet.supernet(blocks("10.0.1.0/24", "10.0.2.0/24"))])).toEqual(["10.0.0.0/22"]);
+    expect(text([subnet.supernet(blocks("192.168.1.0/24"))])).toEqual(["192.168.1.0/24"]);
+    expect(text([subnet.supernet(blocks("1.0.0.0/8", "200.0.0.0/8"))])).toEqual(["0.0.0.0/0"]);
+  });
+
+  it("should check whether an address is in a block", () => {
+    const [block] = blocks("10.0.0.0/12");
+    expect(subnet.contains(block, subnet.ipToInt("10.15.255.255"))).toBe(true);
+    expect(subnet.contains(block, subnet.ipToInt("10.16.0.0"))).toBe(false);
+  });
+});
+
+describe("VLSM /31 links", () => {
+  it("should give two-host links a /31 only when asked", () => {
+    expect(subnet.prefixForHosts(2)).toBe(30);
+    expect(subnet.prefixForHosts(2, true)).toBe(31);
+    expect(subnet.prefixForHosts(1, true)).toBe(31);
+    expect(subnet.prefixForHosts(3, true)).toBe(29);
+  });
+
+  it("should pack /31 links", () => {
+    const plan = subnet.planVlsm(subnet.ipToInt("10.0.0.0"), 29, [{ name: "A", hosts: 2 }, { name: "B", hosts: 2 }], true);
+    expect(plan.needed).toBe(4);
+    expect(plan.blocks.map(block => block.prefix)).toEqual([31, 31, 30]);
+  });
+});

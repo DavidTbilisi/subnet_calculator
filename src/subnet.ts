@@ -36,11 +36,14 @@ export interface VlsmRequest {
   hosts: number;
 }
 
-export interface VlsmBlock {
-  name: string | null;   // null for free space
-  hosts: number;         // hosts needed; 0 for free space
+export interface CidrBlock {
   network: number;
   prefix: number;
+}
+
+export interface VlsmBlock extends CidrBlock {
+  name: string | null;   // null for free space
+  hosts: number;         // hosts needed; 0 for free space
 }
 
 export interface SpecialRange {
@@ -182,8 +185,12 @@ export const tileLayout = function(cellCount: number, subnetCount: number): Grid
   });
 }
 
-// smallest subnet with room for the hosts plus its network and broadcast addresses
-export const prefixForHosts = function(hosts: number): number {
+// smallest subnet with room for the hosts plus its network and broadcast addresses;
+// with allow31, a two-host point-to-point link gets a /31, which reserves neither (RFC 3021)
+export const prefixForHosts = function(hosts: number, allow31 = false): number {
+  if (allow31 && hosts <= 2) {
+    return 31;
+  }
   return 32 - Math.max(2, Math.ceil(Math.log2(hosts + 2)));
 }
 
@@ -201,13 +208,53 @@ export const freeBlocks = function(start: number, end: number): VlsmBlock[] {
   return blocks;
 }
 
+// the fewest CIDR blocks covering the addresses from start to end, both included
+export const rangeToCidrs = function(start: number, end: number): CidrBlock[] {
+  return freeBlocks(start, end + 1).map(({ network, prefix }) => ({ network, prefix }));
+}
+
+// the fewest CIDR blocks covering exactly the addresses of the given blocks (route summarization)
+export const summarize = function(blocks: CidrBlock[]): CidrBlock[] {
+  const ranges = blocks
+    .map(block => subnetInfo(block.network, block.prefix))
+    .map(info => ({ start: info.network, end: info.broadcast }))
+    .sort((a, b) => a.start - b.start);
+
+  // merge overlapping and touching ranges, then split each into aligned blocks
+  const merged: { start: number; end: number }[] = [];
+  ranges.forEach(range => {
+    const last = merged[merged.length - 1];
+    if (last && range.start <= last.end + 1) {
+      last.end = Math.max(last.end, range.end);
+    } else {
+      merged.push({ ...range });
+    }
+  });
+  return merged.flatMap(range => rangeToCidrs(range.start, range.end));
+}
+
+// the smallest single block containing all the given blocks
+export const supernet = function(blocks: CidrBlock[]): CidrBlock {
+  const start = Math.min(...blocks.map(block => subnetInfo(block.network, block.prefix).network));
+  const end = Math.max(...blocks.map(block => subnetInfo(block.network, block.prefix).broadcast));
+  let prefix = Math.min(...blocks.map(block => block.prefix));
+  while (subnetInfo(start, prefix).network !== subnetInfo(end, prefix).network) {
+    prefix--;
+  }
+  return { network: subnetInfo(start, prefix).network, prefix };
+}
+
+export const contains = function(block: CidrBlock, ip: number): boolean {
+  return subnetInfo(ip, block.prefix).network === subnetInfo(block.network, block.prefix).network;
+}
+
 // VLSM: give each request the smallest subnet that fits, largest first so every subnet stays aligned
-export const planVlsm = function(network: number, prefix: number, requests: VlsmRequest[]): VlsmPlan {
+export const planVlsm = function(network: number, prefix: number, requests: VlsmRequest[], allow31 = false): VlsmPlan {
   const end = network + 2 ** (32 - prefix);
   // sort is stable, so equal requests keep the order they were entered in
   const allocations = [...requests]
     .sort((a, b) => b.hosts - a.hosts)
-    .map(request => ({ name: request.name, hosts: request.hosts, network: 0, prefix: prefixForHosts(request.hosts) }));
+    .map(request => ({ name: request.name, hosts: request.hosts, network: 0, prefix: prefixForHosts(request.hosts, allow31) }));
 
   let next = network;
   allocations.forEach(allocation => {
