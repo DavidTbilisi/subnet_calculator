@@ -5,6 +5,9 @@
   "scripts": {
     "build-js": "tsc",
     "watch-js": "tsc -w",
+    "build-pug": "pug src -P -o dist",
+    "build-css": "sass --silence-deprecation=import src/style.scss dist/css/style.css",
+    "build": "npm run build-js && npm run build-pug && npm run build-css",
     "watch-pug": "pug -w src -P -o dist",
     "watch": "npm run watch-js && npm run watch-pug",
     "test": "jest",
@@ -12,8 +15,10 @@
     "test:coverage": "jest --collect-coverage"
   },
   "devDependencies": {
+    "@types/three": "^0.149.0",
     "jest": "^29.7.0",
     "pug-cli": "^1.0.0-alpha6",
+    "sass": "^1.106.1",
     "typescript": "^7.0.2"
   }
 }

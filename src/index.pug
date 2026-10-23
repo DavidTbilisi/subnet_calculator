@@ -4,6 +4,9 @@ html(lang="en")
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         link(rel="stylesheet", href="./css/style.css")
+        script(src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js", defer)
+        script(src="./subnet.js", defer)
+        script(src="./subnet3d.js", defer)
         script(src="./main.js", defer) 
         title IP Calculator
     body
@@ -43,8 +46,77 @@ html(lang="en")
                             | ip addr
                         span.terminal-input-cursor
                             | _
-                    input(type="text", id="ip", placeholder="Enter IP Address")
+                    input(type="text", id="ip", placeholder="Enter IP Address (e.g. 192.168.1.70/26)")
                     p#ip-result
+
+        .container
+            section.subnetting#subnetting
+                h2 Subnetting
+                .subnet-modes(role="group", aria-label="Subnetting mode")
+                    button.subnet-mode(type="button", data-mode="equal", aria-pressed="true") Equal subnets
+                    button.subnet-mode(type="button", data-mode="vlsm", aria-pressed="false") VLSM
+                .equal-only
+                    p Subnetting borrows bits from the host part of a classful network to split it into equal smaller networks. Type an address with a prefix in the terminal (e.g. 10.20.30.40/20), or drag the slider.
+                    p#subnet-note.subnet-note
+                    .subnet-controls
+                        label(for="prefix") Prefix length
+                        input#prefix(type="range", min="0", max="32", value="26")
+                        output#prefix-value(for="prefix") /26
+                    #subnet-bits.subnet-bits
+                    .subnet-legend
+                        span.legend.legend-network Network
+                        span.legend.legend-subnet Subnet (borrowed)
+                        span.legend.legend-host Host
+                    p#subnet-caption.subnet-caption
+                .vlsm-only.vlsm-panel
+                    p VLSM (variable length subnet masking) gives each subnet only the space it needs. Subnets are allocated largest first, so each one starts on a boundary of its own size.
+                    .vlsm-network
+                        label(for="vlsm-network") Network to divide
+                        input#vlsm-network(type="text", placeholder="192.168.1.0/24", spellcheck="false")
+                    table.vlsm-requests
+                        thead
+                            tr
+                                th Subnet
+                                th Hosts needed
+                                th
+                                    span.visually-hidden Remove
+                        tbody#vlsm-requests
+                    button#vlsm-add.vlsm-add(type="button") + Add subnet
+                    p#vlsm-caption.subnet-caption
+                .subnet-view
+                    .subnet-3d-wrap
+                        #subnet-3d.subnet-3d(role="img", aria-label="3D grid of the subnets; the table lists the same subnets")
+                            #subnet-tooltip.subnet-tooltip(hidden)
+                        .subnet-legend.equal-only
+                            span.legend.legend-ip Your IP
+                            span.legend.legend-subnet Your subnet
+                            span.legend.legend-others Other subnets
+                            span.legend.legend-reserved Network / broadcast
+                        .subnet-legend.vlsm-only
+                            span.legend.legend-needed Needed hosts
+                            span.legend.legend-spare Spare hosts
+                            span.legend.legend-reserved Network / broadcast
+                            span.legend.legend-free Free space
+                        p.subnet-hint Drag to rotate, hover a block or table row to highlight its subnet.
+                    .subnet-table-wrap.equal-only#subnet-table-wrap
+                        table.subnet-table
+                            thead
+                                tr
+                                    th #
+                                    th Network
+                                    th Hosts
+                                    th Broadcast
+                            tbody#subnet-rows
+                    .subnet-table-wrap.vlsm-only#vlsm-table-wrap
+                        table.subnet-table
+                            thead
+                                tr
+                                    th Subnet
+                                    th Network
+                                    th Hosts
+                                    th Needed
+                                    th Spare
+                            tbody#vlsm-rows
         
         .container
             section.ip-classes 

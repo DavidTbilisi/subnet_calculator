@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js" defer></script>
+    <script src="./subnet.js" defer></script>
+    <script src="./subnet3d.js" defer></script>
     <script src="./main.js" defer> </script>
     <title>IP Calculator</title>
   </head>
@@ -23,10 +26,87 @@
         <div class="terminal-body">
           <div class="ps1"> <span class="terminal-user">user</span><span class="terminal-at">@</span><span class="terminal-host">kali</span><span class="terminal-dir">~</span><span class="terminal-dlr">$</span></div>
           <div class="terminal-input"><span class="terminal-input-text">ip addr</span><span class="terminal-input-cursor">_</span></div>
-          <input type="text" id="ip" placeholder="Enter IP Address">
+          <input type="text" id="ip" placeholder="Enter IP Address (e.g. 192.168.1.70/26)">
           <p id="ip-result"></p>
         </div>
       </div>
+    </div>
+    <div class="container">
+      <section class="subnetting" id="subnetting">
+        <h2>Subnetting</h2>
+        <div class="subnet-modes" role="group" aria-label="Subnetting mode">
+          <button class="subnet-mode" type="button" data-mode="equal" aria-pressed="true">Equal subnets</button>
+          <button class="subnet-mode" type="button" data-mode="vlsm" aria-pressed="false">VLSM</button>
+        </div>
+        <div class="equal-only">
+          <p>Subnetting borrows bits from the host part of a classful network to split it into equal smaller networks. Type an address with a prefix in the terminal (e.g. 10.20.30.40/20), or drag the slider.</p>
+          <p class="subnet-note" id="subnet-note"></p>
+          <div class="subnet-controls">
+            <label for="prefix">Prefix length</label>
+            <input id="prefix" type="range" min="0" max="32" value="26">
+            <output id="prefix-value" for="prefix">/26</output>
+          </div>
+          <div class="subnet-bits" id="subnet-bits"></div>
+          <div class="subnet-legend"><span class="legend legend-network">Network</span><span class="legend legend-subnet">Subnet (borrowed)</span><span class="legend legend-host">Host</span></div>
+          <p class="subnet-caption" id="subnet-caption"></p>
+        </div>
+        <div class="vlsm-only vlsm-panel">
+          <p>VLSM (variable length subnet masking) gives each subnet only the space it needs. Subnets are allocated largest first, so each one starts on a boundary of its own size.</p>
+          <div class="vlsm-network">
+            <label for="vlsm-network">Network to divide</label>
+            <input id="vlsm-network" type="text" placeholder="192.168.1.0/24" spellcheck="false">
+          </div>
+          <table class="vlsm-requests">
+            <thead>
+              <tr>
+                <th>Subnet</th>
+                <th>Hosts needed</th>
+                <th><span class="visually-hidden">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody id="vlsm-requests"></tbody>
+          </table>
+          <button class="vlsm-add" id="vlsm-add" type="button">+ Add subnet</button>
+          <p class="subnet-caption" id="vlsm-caption"></p>
+        </div>
+        <div class="subnet-view">
+          <div class="subnet-3d-wrap">
+            <div class="subnet-3d" id="subnet-3d" role="img" aria-label="3D grid of the subnets; the table lists the same subnets">
+              <div class="subnet-tooltip" id="subnet-tooltip" hidden></div>
+            </div>
+            <div class="subnet-legend equal-only"><span class="legend legend-ip">Your IP</span><span class="legend legend-subnet">Your subnet</span><span class="legend legend-others">Other subnets</span><span class="legend legend-reserved">Network / broadcast</span></div>
+            <div class="subnet-legend vlsm-only"><span class="legend legend-needed">Needed hosts</span><span class="legend legend-spare">Spare hosts</span><span class="legend legend-reserved">Network / broadcast</span><span class="legend legend-free">Free space</span></div>
+            <p class="subnet-hint">Drag to rotate, hover a block or table row to highlight its subnet.</p>
+          </div>
+          <div class="subnet-table-wrap equal-only" id="subnet-table-wrap">
+            <table class="subnet-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Network</th>
+                  <th>Hosts</th>
+                  <th>Broadcast</th>
+                </tr>
+              </thead>
+              <tbody id="subnet-rows"></tbody>
+            </table>
+          </div>
+          <div class="subnet-table-wrap vlsm-only" id="vlsm-table-wrap">
+            <table class="subnet-table">
+              <thead>
+                <tr>
+                  <th>Subnet</th>
+                  <th>Network</th>
+                  <th>Hosts</th>
+                  <th>Needed</th>
+                  <th>Spare</th>
+                </tr>
+              </thead>
+              <tbody id="vlsm-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
     <div class="container">
       <section class="ip-classes"> 
