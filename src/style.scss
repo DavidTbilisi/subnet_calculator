@@ -240,9 +240,13 @@ h4 {
 
 
 .tcp-headers {
+    // on narrow screens the grid scrolls sideways so the one-bit flags stay readable
+    overflow-x: auto;
+
     .header-grid{
         display: grid;
         grid-template-columns: repeat(33, 1fr);
+        min-width: 760px;
         $sizes: 1, 4, 16, 32;
         @each $i in $sizes{
             .bit#{$i} {
@@ -258,7 +262,15 @@ h4 {
 
         }
     }
-    
+
+    a {
+        color: inherit;
+    }
+
+    .tcp-note {
+        margin-top: 15px;
+        line-height: 1.5;
+    }
 
     margin-bottom: 200px;
 }
