@@ -43,6 +43,11 @@ export interface VlsmBlock {
   prefix: number;
 }
 
+export interface SpecialRange {
+  name: string;
+  cidr: string;
+}
+
 export interface VlsmPlan {
   blocks: VlsmBlock[];   // allocations then free space, in address order
   needed: number;        // addresses the allocations take
@@ -65,6 +70,29 @@ export const intToIp = function(n: number): string {
 
 export const toBinary = function(n: number): string {
   return n.toString(2).padStart(32, '0');
+}
+
+// special-purpose blocks (RFC 6890 and friends), most specific first
+const specialRanges: [string, number, string][] = [
+  ['255.255.255.255', 32, 'Limited broadcast'],
+  ['0.0.0.0', 8, 'This network (RFC 1122)'],
+  ['127.0.0.0', 8, 'Loopback'],
+  ['10.0.0.0', 8, 'Private (RFC 1918)'],
+  ['172.16.0.0', 12, 'Private (RFC 1918)'],
+  ['192.168.0.0', 16, 'Private (RFC 1918)'],
+  ['100.64.0.0', 10, 'Shared / CGNAT (RFC 6598)'],
+  ['169.254.0.0', 16, 'Link-local (RFC 3927)'],
+  ['192.0.2.0', 24, 'Documentation (TEST-NET-1)'],
+  ['198.51.100.0', 24, 'Documentation (TEST-NET-2)'],
+  ['203.0.113.0', 24, 'Documentation (TEST-NET-3)'],
+  ['224.0.0.0', 4, 'Multicast'],
+  ['240.0.0.0', 4, 'Reserved'],
+];
+
+// the special-purpose block an address is in, or null for a public address
+export const specialRange = function(ip: number): SpecialRange | null {
+  const match = specialRanges.find(([network, prefix]) => (ip & prefixToMask(prefix)) >>> 0 === ipToInt(network));
+  return match ? { name: match[2], cidr: `${match[0]}/${match[1]}` } : null;
 }
 
 // "192.168.1.70" or "192.168.1.70/26"

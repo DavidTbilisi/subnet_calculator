@@ -2,7 +2,7 @@ import './style.scss';
 import { classfulPrefix, intToIp, parseCidr, planVlsm, prefixToMask, subnetInfo, subnetLayout } from './subnet';
 import type { VlsmRequest } from './subnet';
 import { SubnetScene } from './subnet3d';
-import { bitRow, blockCidr, classTypes, cssColor, describeSubnet, detectIpClass, escapeHtml, exampleCidr, exampleVlsmCidr, formatCount, subnetCells, vlsmCells, vlsmColors } from './view';
+import { bitRow, blockCidr, classTypes, cssColor, describeScope, describeSubnet, detectIpClass, escapeHtml, exampleCidr, exampleVlsmCidr, formatCount, scopeLine, subnetCells, vlsmCells, vlsmColors } from './view';
 
 // wire up the page
 const ipInput = document.getElementById('ip') as HTMLInputElement;
@@ -240,7 +240,7 @@ const update = function(): void {
   const classLine = ipClass in classTypes ? `Class ${ipClass} (${classTypes[ipClass]})` : ipClass;
 
   if (value !== '') {
-    ipResult.textContent = parentPrefix !== null && prefix !== null ? `${classLine}\n${describeSubnet(cidr.ip, prefix)}` : classLine;
+    ipResult.textContent = `${classLine}\n${parentPrefix !== null && prefix !== null ? describeSubnet(cidr.ip, prefix) : scopeLine(cidr.ip)}`;
   } else {
     ipResult.textContent = '';
   }
@@ -254,7 +254,7 @@ const update = function(): void {
     section.classList.add('subnet-disabled');
     note.textContent = ipClass in classTypes
       ? `Class ${ipClass} addresses are ${classTypes[ipClass].toLowerCase()} and are not subnetted.`
-      : `${intToIp(cidr.ip)} is reserved and cannot be subnetted.`;
+      : `${intToIp(cidr.ip)} is reserved (${describeScope(cidr.ip)}) and cannot be subnetted.`;
     prefixInput.disabled = true;
     return;
   }

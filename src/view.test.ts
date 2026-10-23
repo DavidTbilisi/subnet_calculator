@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ipToInt, planVlsm, subnetLayout } from "./subnet";
-import { blockColors, describeSubnet, detectIpClass, escapeHtml, freeColor, subnetCells, vlsmCells, vlsmColors } from "./view";
+import { blockColors, describeScope, describeSubnet, detectIpClass, escapeHtml, freeColor, subnetCells, vlsmCells, vlsmColors } from "./view";
 
 describe("IP class detection", () => {
   it("should detect classes A to E", () => {
@@ -9,6 +9,11 @@ describe("IP class detection", () => {
     expect(detectIpClass("192.168.1.1")).toBe("C");
     expect(detectIpClass("224.0.0.1")).toBe("D");
     expect(detectIpClass("240.0.0.1")).toBe("E");
+  });
+
+  it("should mark 0.x and 127.x as reserved", () => {
+    expect(detectIpClass("0.0.0.0")).toBe("Reserved");
+    expect(detectIpClass("127.0.0.1")).toBe("Reserved");
   });
 
   it("should return 'Invalid IP' outside the classes", () => {
@@ -25,7 +30,13 @@ describe("Subnet description", () => {
       "Network    192.168.1.64",
       "Broadcast  192.168.1.127",
       "Hosts      192.168.1.65 - 192.168.1.126 (62)",
+      "Scope      Private (RFC 1918) 192.168.0.0/16",
     ]);
+  });
+
+  it("should call addresses outside special blocks public", () => {
+    expect(describeScope(ipToInt("8.8.8.8"))).toBe("Public");
+    expect(describeScope(ipToInt("127.0.0.1"))).toBe("Loopback 127.0.0.0/8");
   });
 });
 

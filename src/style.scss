@@ -147,7 +147,7 @@ h4 {
     .header-grid{
         display: grid;
         grid-template-columns: repeat(33, 1fr);
-        $sizes: 1, 4, 6, 16, 32;
+        $sizes: 1, 4, 16, 32;
         @each $i in $sizes{
             .bit#{$i} {
                 grid-column: span #{$i};

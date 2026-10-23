@@ -1,10 +1,10 @@
 // DOM-free view helpers: address descriptions, bit rows and the 3D grid cells
 
-import { intToIp, subnetInfo, toBinary, tileLayout, nestedLayout } from './subnet';
+import { intToIp, specialRange, subnetInfo, toBinary, tileLayout, nestedLayout } from './subnet';
 import type { SubnetLayout, VlsmBlock } from './subnet';
 import type { Cell } from './subnet3d';
 
-// detect IP Class
+// classful class of an address; 0.x and 127.x are 'Reserved'
 export const detectIpClass = function(ip: string): string {
   const firstOctet = parseInt(ip.split('.')[0]);
 
@@ -18,6 +18,8 @@ export const detectIpClass = function(ip: string): string {
     return 'D';
   } else if (firstOctet >= 240 && firstOctet <= 255) {
     return 'E';
+  } else if (firstOctet === 0 || firstOctet === 127) {
+    return 'Reserved';
   } else {
     return 'Invalid IP';
   }
@@ -65,18 +67,33 @@ export const formatCount = function(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+const terminalLines = function(lines: string[][]): string {
+  return lines.map(([name, value]) => `${name.padEnd(11)}${value}`).join('\n');
+}
+
+// what an address is used for, e.g. "Private (RFC 1918) 10.0.0.0/8" or "Public"
+export const describeScope = function(ip: number): string {
+  const range = specialRange(ip);
+  return range ? `${range.name} ${range.cidr}` : 'Public';
+}
+
+// terminal line for an address that is not subnetted
+export const scopeLine = function(ip: number): string {
+  return terminalLines([['Scope', describeScope(ip)]]);
+}
+
 // terminal output for an address in a subnet
 export const describeSubnet = function(ip: number, prefix: number): string {
   const info = subnetInfo(ip, prefix);
-  const lines = [
+  return terminalLines([
     ['Address', `${intToIp(ip)}/${prefix}`],
     ['Netmask', intToIp(info.mask)],
     ['Wildcard', intToIp(info.wildcard)],
     ['Network', intToIp(info.network)],
     ['Broadcast', intToIp(info.broadcast)],
     ['Hosts', `${intToIp(info.firstHost)} - ${intToIp(info.lastHost)} (${formatCount(info.usableHosts)})`],
-  ];
-  return lines.map(([name, value]) => `${name.padEnd(11)}${value}`).join('\n');
+    ['Scope', describeScope(ip)],
+  ]);
 }
 
 // one row of 32 bits split into octets, each bit tagged network / subnet / host

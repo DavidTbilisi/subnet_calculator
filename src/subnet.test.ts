@@ -142,3 +142,30 @@ describe("Nested layout", () => {
     expect(subnet.nestedLayout([4, 4, 8], 8)).toHaveLength(2);
   });
 });
+
+describe("Special ranges", () => {
+  const range = (ip: string) => subnet.specialRange(subnet.ipToInt(ip));
+
+  it("should find the block an address is in", () => {
+    expect(range("127.0.0.1")).toEqual({ name: "Loopback", cidr: "127.0.0.0/8" });
+    expect(range("0.1.2.3")?.cidr).toBe("0.0.0.0/8");
+    expect(range("10.200.0.1")?.cidr).toBe("10.0.0.0/8");
+    expect(range("172.31.255.255")?.cidr).toBe("172.16.0.0/12");
+    expect(range("192.168.1.70")?.cidr).toBe("192.168.0.0/16");
+    expect(range("100.127.0.1")?.cidr).toBe("100.64.0.0/10");
+    expect(range("169.254.10.10")?.name).toBe("Link-local (RFC 3927)");
+    expect(range("198.51.100.7")?.cidr).toBe("198.51.100.0/24");
+    expect(range("239.1.1.1")?.name).toBe("Multicast");
+  });
+
+  it("should prefer the most specific block", () => {
+    expect(range("255.255.255.255")?.name).toBe("Limited broadcast");
+    expect(range("255.255.255.254")?.name).toBe("Reserved");
+  });
+
+  it("should return null for public addresses", () => {
+    expect(range("8.8.8.8")).toBeNull();
+    expect(range("172.32.0.1")).toBeNull();
+    expect(range("100.128.0.1")).toBeNull();
+  });
+});

@@ -1,7 +1,7 @@
 {
   "name": "ip-calculator",
   "version": "1.0.0",
-  "description": "",
+  "description": "IPv4 subnet calculator with a 3D subnet grid, VLSM planner and IP class / TCP header reference",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
