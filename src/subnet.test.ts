@@ -1,14 +1,15 @@
-const subnet = require("../dist/subnet");
+import { describe, expect, it } from "vitest";
+import * as subnet from "./subnet";
 
 describe("CIDR parsing", () => {
   it("should parse an IP with a prefix", () => {
-    const result = subnet.parseCidr("192.168.1.70/26");
+    const result = subnet.parseCidr("192.168.1.70/26")!;
     expect(subnet.intToIp(result.ip)).toBe("192.168.1.70");
     expect(result.prefix).toBe(26);
   });
 
   it("should leave the prefix empty when it is omitted", () => {
-    expect(subnet.parseCidr("10.0.0.1").prefix).toBeNull();
+    expect(subnet.parseCidr("10.0.0.1")!.prefix).toBeNull();
   });
 
   it("should reject invalid addresses and prefixes", () => {

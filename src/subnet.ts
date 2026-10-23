@@ -1,11 +1,11 @@
 // IPv4 subnet math, shared by the page and the tests
 
-interface Cidr {
+export interface Cidr {
   ip: number;
   prefix: number | null;
 }
 
-interface SubnetInfo {
+export interface SubnetInfo {
   network: number;
   broadcast: number;
   mask: number;
@@ -15,7 +15,7 @@ interface SubnetInfo {
   usableHosts: number;
 }
 
-interface SubnetLayout {
+export interface SubnetLayout {
   blockPrefix: number;   // prefix of the block drawn in the grid
   blockNetwork: number;
   subnetCount: number;   // subnets inside the drawn block (at most 256)
@@ -24,51 +24,51 @@ interface SubnetLayout {
   cellSize: number;      // addresses per cell
 }
 
-interface GridPosition {
+export interface GridPosition {
   col: number;
   row: number;
   gapCols: number;       // gaps between subnets to the left of the cell
   gapRows: number;       // gaps between subnets above the cell
 }
 
-interface VlsmRequest {
+export interface VlsmRequest {
   name: string;
   hosts: number;
 }
 
-interface VlsmBlock {
+export interface VlsmBlock {
   name: string | null;   // null for free space
   hosts: number;         // hosts needed; 0 for free space
   network: number;
   prefix: number;
 }
 
-interface VlsmPlan {
+export interface VlsmPlan {
   blocks: VlsmBlock[];   // allocations then free space, in address order
   needed: number;        // addresses the allocations take
   fits: boolean;
 }
 
 // four dot-separated octets, each 0-255
-const isValidIp = function(ip: string): boolean {
+export const isValidIp = function(ip: string): boolean {
   const octets = ip.split('.');
   return octets.length === 4 && octets.every(octet => /^\d{1,3}$/.test(octet) && parseInt(octet) <= 255);
 }
 
-const ipToInt = function(ip: string): number {
+export const ipToInt = function(ip: string): number {
   return ip.split('.').reduce((acc, octet) => acc * 256 + parseInt(octet), 0);
 }
 
-const intToIp = function(n: number): string {
+export const intToIp = function(n: number): string {
   return [24, 16, 8, 0].map(shift => (n >>> shift) & 255).join('.');
 }
 
-const toBinary = function(n: number): string {
+export const toBinary = function(n: number): string {
   return n.toString(2).padStart(32, '0');
 }
 
 // "192.168.1.70" or "192.168.1.70/26"
-const parseCidr = function(input: string): Cidr | null {
+export const parseCidr = function(input: string): Cidr | null {
   const [ip, prefix, ...rest] = input.trim().split('/');
 
   if (rest.length > 0 || !isValidIp(ip)) {
@@ -84,16 +84,16 @@ const parseCidr = function(input: string): Cidr | null {
 }
 
 // default prefix of a class A/B/C network; D and E are not subnetted
-const classfulPrefix = function(ipClass: string): number | null {
+export const classfulPrefix = function(ipClass: string): number | null {
   const prefixes: { [ipClass: string]: number } = { A: 8, B: 16, C: 24 };
   return ipClass in prefixes ? prefixes[ipClass] : null;
 }
 
-const prefixToMask = function(prefix: number): number {
+export const prefixToMask = function(prefix: number): number {
   return prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
 }
 
-const subnetInfo = function(ip: number, prefix: number): SubnetInfo {
+export const subnetInfo = function(ip: number, prefix: number): SubnetInfo {
   const mask = prefixToMask(prefix);
   const network = (ip & mask) >>> 0;
   const size = 2 ** (32 - prefix);
@@ -114,7 +114,7 @@ const subnetInfo = function(ip: number, prefix: number): SubnetInfo {
 
 // The parent network split into /prefix subnets, laid out as a grid of up to 256 cells.
 // When the parent holds more than 256 subnets, only the 256 around the IP are drawn.
-const subnetLayout = function(ip: number, prefix: number, parentPrefix: number): SubnetLayout {
+export const subnetLayout = function(ip: number, prefix: number, parentPrefix: number): SubnetLayout {
   const parent = Math.min(parentPrefix, prefix);
   const blockPrefix = Math.max(parent, prefix - 8);
   const blockSize = 2 ** (32 - blockPrefix);
@@ -132,7 +132,7 @@ const subnetLayout = function(ip: number, prefix: number, parentPrefix: number):
 
 // Grid position of each cell when every subnet is drawn as its own rectangular tile:
 // tiles in reading order across a roughly square grid, cells in reading order inside each tile
-const tileLayout = function(cellCount: number, subnetCount: number): GridPosition[] {
+export const tileLayout = function(cellCount: number, subnetCount: number): GridPosition[] {
   const cellsPerTile = cellCount / subnetCount;
   const tileWidth = 2 ** Math.ceil(Math.log2(cellsPerTile) / 2);
   const tileHeight = cellsPerTile / tileWidth;
@@ -155,12 +155,12 @@ const tileLayout = function(cellCount: number, subnetCount: number): GridPositio
 }
 
 // smallest subnet with room for the hosts plus its network and broadcast addresses
-const prefixForHosts = function(hosts: number): number {
+export const prefixForHosts = function(hosts: number): number {
   return 32 - Math.max(2, Math.ceil(Math.log2(hosts + 2)));
 }
 
 // largest aligned blocks covering the addresses from start up to (not including) end
-const freeBlocks = function(start: number, end: number): VlsmBlock[] {
+export const freeBlocks = function(start: number, end: number): VlsmBlock[] {
   const blocks: VlsmBlock[] = [];
   while (start < end) {
     let size = 1;
@@ -174,7 +174,7 @@ const freeBlocks = function(start: number, end: number): VlsmBlock[] {
 }
 
 // VLSM: give each request the smallest subnet that fits, largest first so every subnet stays aligned
-const planVlsm = function(network: number, prefix: number, requests: VlsmRequest[]): VlsmPlan {
+export const planVlsm = function(network: number, prefix: number, requests: VlsmRequest[]): VlsmPlan {
   const end = network + 2 ** (32 - prefix);
   // sort is stable, so equal requests keep the order they were entered in
   const allocations = [...requests]
@@ -195,7 +195,7 @@ const planVlsm = function(network: number, prefix: number, requests: VlsmRequest
 // Grid position of each cell when differently sized blocks (in address order, covering the whole range) are
 // drawn as nested rectangles: a range is halved, top/bottom when square and left/right when wide, with a gap
 // between the halves, until it lies inside one block; cells inside a block run in reading order.
-const nestedLayout = function(sizes: number[], cellSize: number): GridPosition[] {
+export const nestedLayout = function(sizes: number[], cellSize: number): GridPosition[] {
   const starts = sizes.map((_, i) => sizes.slice(0, i).reduce((sum, size) => sum + size, 0));
   const total = starts[starts.length - 1] + sizes[sizes.length - 1];
 
@@ -233,8 +233,4 @@ const nestedLayout = function(sizes: number[], cellSize: number): GridPosition[]
   }
 
   return layout(0, total).cells;
-}
-
-if (typeof module !== 'undefined') {
-  module.exports = { isValidIp, ipToInt, intToIp, toBinary, parseCidr, classfulPrefix, prefixToMask, subnetInfo, subnetLayout, tileLayout, prefixForHosts, planVlsm, nestedLayout };
 }

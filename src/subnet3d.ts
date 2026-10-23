@@ -1,6 +1,9 @@
-// 3D block grid of a network split into subnets, drawn with three.js (loaded from the CDN as a global)
+// 3D block grid of a network split into subnets, drawn with three.js
 
-interface Cell {
+import * as THREE from 'three';
+import type { GridPosition } from './subnet';
+
+export interface Cell {
   color: number;
   height: number;
   label: string;
@@ -20,7 +23,7 @@ const blockSpacing = 1.15;
 // extra space between subnet tiles
 const tileGap = 1.2;
 
-class SubnetScene {
+export class SubnetScene {
   // called with the subnet under the pointer, or -1
   onHoverGroup: (group: number) => void = () => {};
 
@@ -51,9 +54,10 @@ class SubnetScene {
     this.renderer.setClearColor(0x1a1c1c);
     container.appendChild(this.renderer.domElement);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    // intensities scaled by π to match the look from before three.js switched to physical light units
+    const sun = new THREE.DirectionalLight(0xffffff, 0.9 * Math.PI);
     sun.position.set(10, 20, 14);
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.55), sun, this.grid);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.55 * Math.PI), sun, this.grid);
 
     new ResizeObserver(() => this.resize()).observe(container);
     this.bindPointer();
