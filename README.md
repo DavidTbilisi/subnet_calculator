@@ -9,7 +9,7 @@ An IPv4 and IPv6 subnet calculator that runs in the browser.
 - **VLSM**: list the subnets you need with their host counts and get the smallest aligned subnet for each, allocated largest first, plus the free space that is left. Two-host links can optionally use /31 (RFC 3021).
 - **Tools**: summarize routes into the fewest CIDR blocks, turn an address range into CIDR blocks, check whether an address is in a network, find overlapping or repeated networks in a list, and subtract networks from others (e.g. 10.0.0.0/16 minus 10.0.5.0/24).
 - **Shareable links**: the address, parent prefix, mode and VLSM plan are kept in the URL, so a copied link reopens the same view.
-- **Packet headers**: IPv4, IPv6, TCP and UDP header layouts with a description of every field on hover, and a decoder: paste a packet as hex (e.g. Wireshark's "Copy as Hex Stream") to see each header field by field, with checksums checked, TCP options decoded and the payload as hex and ASCII. Ethernet frames are recognized.
+- **Packet headers**: IPv4, IPv6, TCP and UDP header layouts with a description of every field on hover, and a decoder: paste a packet as hex (e.g. Wireshark's "Copy as Hex Stream") to see each header field by field, with checksums checked, TCP options decoded and the payload as hex and ASCII. Ethernet frames are recognized. A 3D view draws the decoded packet one block per bit (tall for 1, flat for 0), one tier per header; hovering or clicking a field highlights it in both the 3D view and the grids.
 - **Reference**: IPv4 address classes.
 - **3D grid**: drag to rotate, pinch or Ctrl + scroll to zoom, click a block or table row to select its subnet. When the grid has focus, the arrow keys rotate, + and - zoom, [ and ] step through subnets, and Enter selects.
 - **Light and dark themes**: the page follows the system setting until you pick one with the toggle in the terminal header.
@@ -27,7 +27,7 @@ npm run build          # type-check and build into dist/
 npm run preview        # serve the production build
 ```
 
-The IPv4 subnet math lives in `src/subnet.ts` and the IPv6 math in `src/ipv6.ts`. The DOM-free view helpers (terminal text, grid cells) are in `src/view.ts`, the three.js scene is in `src/subnet3d.ts`, and `src/main.ts` wires up the page (with `src/tools.ts` for the Tools section, `src/packets.ts` for Packet Headers and `src/urlState.ts` for the URL hash). The header layouts and the packet decoder are in `src/headers.ts`. The 3D view loads on demand, so three.js is fetched only when the grid is about to scroll into view.
+The IPv4 subnet math lives in `src/subnet.ts` and the IPv6 math in `src/ipv6.ts`. The DOM-free view helpers (terminal text, grid cells) are in `src/view.ts`, the three.js scene is in `src/subnet3d.ts`, and `src/main.ts` wires up the page (with `src/tools.ts` for the Tools section, `src/packets.ts` for Packet Headers and `src/urlState.ts` for the URL hash). The header layouts and the packet decoder are in `src/headers.ts`. Both 3D views load on demand through `src/sceneLoader.ts`, so three.js is fetched only when one is about to scroll into view.
 
 ## Deployment
 

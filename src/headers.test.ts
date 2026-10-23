@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodePacket, examplePackets, headerGrid, headerLayouts, hexDump, parseHex } from "./headers";
+import { decodePacket, examplePackets, firstGroups, headerGrid, headerLayouts, hexDump, packetCells, parseHex } from "./headers";
 import type { DecodedPacket } from "./headers";
 
 const bytes = (hex: string) => parseHex(hex) as Uint8Array;
@@ -107,5 +107,39 @@ describe("Header grids", () => {
 
   it("should dump bytes with their ASCII", () => {
     expect(hexDump(new TextEncoder().encode("GET /"))).toBe(`0000  47 45 54 20 2f${" ".repeat(33)}  GET /`);
+  });
+});
+
+describe("3D bit view", () => {
+  it("should draw one block per bit, raised for 1, with each header on its own tier", () => {
+    const packet = decodePacket(bytes(examplePackets.syn.hex));
+    const { cells, labels } = packetCells(packet);
+    expect(cells.length).toBe((20 + 40) * 8);
+
+    // IPv4 Version is 0100: only its second bit is set
+    expect(cells.slice(0, 4).map(cell => cell.height > 1)).toEqual([false, true, false, false]);
+    expect(cells[1].label).toBe("IPv4 Version: 4\nbit 2 of 4: 1");
+
+    // the TCP header starts a new tier after the five IPv4 rows
+    const tcp = cells[20 * 8];
+    expect(tcp.position).toEqual({ col: 0, row: 5, gapCols: 0, gapRows: 2 });
+    const syn = firstGroups(packet)[1] + headerLayouts.tcp.fields.findIndex(field => field.name === "SYN");
+    expect(cells.filter(cell => cell.group === syn).map(cell => cell.height > 1)).toEqual([true]);
+    expect(labels[syn]).toBe("TCP SYN");
+  });
+
+  it("should add the start of the payload as the last tier", () => {
+    const packet = decodePacket(bytes(examplePackets.http.hex));
+    const { cells, labels } = packetCells(packet);
+    const payload = cells.filter(cell => cell.position.gapRows === 4);
+    expect(payload.length).toBe(32 * 8);
+    expect(payload[0].label).toBe("Payload byte 0: 0x47 'G'\nbit 1 of 8: 0");
+    expect(labels[firstGroups(packet)[2]]).toBe("Payload (first 32 of 37 bytes)");
+  });
+
+  it("should tag grid fields with the same groups", () => {
+    const packet = decodePacket(bytes(examplePackets.syn.hex));
+    const html = headerGrid(packet.layers[1].cells, firstGroups(packet)[1]);
+    expect(html).toContain(`data-group="${firstGroups(packet)[1]}"`);
   });
 });

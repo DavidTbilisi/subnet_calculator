@@ -4,7 +4,8 @@ import type { VlsmRequest } from './subnet';
 import { formatIpv6, parseIpv6, subnetInfo6, subnetWindow6 } from './ipv6';
 import type { Cell, SubnetScene } from './subnet3d';
 import { initPackets } from './packets';
-import { initTheme, themeColor } from './theme';
+import { loadSceneWhenVisible, updateSceneBackgrounds } from './sceneLoader';
+import { initTheme } from './theme';
 import { initTools } from './tools';
 import { decodeState, encodeState } from './urlState';
 import type { PageState } from './urlState';
@@ -38,8 +39,7 @@ const vlsmTableWrap = document.getElementById('vlsm-table-wrap') as HTMLElement;
 const vlsmRows = document.getElementById('vlsm-rows') as HTMLElement;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 
-// three.js is most of the page's code, so the 3D view is loaded once it is about to scroll into view;
-// until then (and if WebGL is unavailable) scene is null and the rest of the page works without it
+// null until the 3D view has loaded (see sceneLoader.ts), and for good if WebGL is unavailable
 let scene: SubnetScene | null = null;
 // what the scene shows, kept so a scene that loads later starts from the current view
 let sceneContent: { cells: Cell[]; labels: string[] } | null = null;
@@ -324,29 +324,6 @@ const drawScene = function(cells: Cell[], labels: string[]): void {
   scene?.update(cells, labels);
 }
 
-const loadScene = async function(): Promise<void> {
-  sceneContainer.classList.add('subnet-3d-loading');
-  try {
-    const { SubnetScene } = await import('./subnet3d');
-    scene = new SubnetScene(sceneContainer, tooltip);
-  } catch (error) {
-    sceneContainer.classList.add('subnet-3d-unavailable');
-    sceneContainer.textContent = '3D view unavailable in this browser.';
-    return;
-  } finally {
-    sceneContainer.classList.remove('subnet-3d-loading');
-  }
-
-  // hovering a subnet in the 3D grid or the table highlights it in both
-  scene.onHoverGroup = highlightRow;
-  scene.onSelectGroup = selectGroup;
-  scene.setBackground(themeColor('--scene-bg'));
-  if (sceneContent) {
-    scene.update(sceneContent.cells, sceneContent.labels);
-  }
-  scene.pinGroup(mode === 'vlsm' ? pinnedVlsm : -1);
-}
-
 const showInvalid = function(): void {
   // keep the last visualization while the address is being typed
   ipResult.textContent = 'Invalid IP';
@@ -498,13 +475,15 @@ window.addEventListener('hashchange', () => applyState(decodeState(location.hash
 applyState(decodeState(location.hash, defaults));
 initTools();
 initPackets();
-initTheme(themeToggle, () => scene?.setBackground(themeColor('--scene-bg')));
+initTheme(themeToggle, updateSceneBackgrounds);
 
-// start loading a little before the grid is visible; it is hidden for IPv6, so that waits until it is shown
-const sceneObserver = new IntersectionObserver(entries => {
-  if (entries.some(entry => entry.isIntersecting)) {
-    sceneObserver.disconnect();
-    loadScene();
+loadSceneWhenVisible(sceneContainer, tooltip, loaded => {
+  scene = loaded;
+  // hovering a subnet in the 3D grid or the table highlights it in both
+  scene.onHoverGroup = highlightRow;
+  scene.onSelectGroup = selectGroup;
+  if (sceneContent) {
+    scene.update(sceneContent.cells, sceneContent.labels);
   }
-}, { rootMargin: '300px' });
-sceneObserver.observe(sceneContainer);
+  scene.pinGroup(mode === 'vlsm' ? pinnedVlsm : -1);
+});

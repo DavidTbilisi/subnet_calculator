@@ -1,4 +1,4 @@
-// 3D block grid of a network split into subnets, drawn with three.js
+// 3D block grid of a network split into subnets (or of a packet's bits), drawn with three.js
 
 import * as THREE from 'three';
 import type { GridPosition } from './subnet';
@@ -9,6 +9,13 @@ export interface Cell {
   label: string;
   group: number;  // index of the subnet the cell belongs to
   position: GridPosition;
+}
+
+// where the camera starts; the defaults suit the square subnet grids
+export interface SceneView {
+  azimuth?: number;
+  polar?: number;
+  distanceScale?: number;   // multiplies the distance that fits the grid
 }
 
 interface GroupLabel {
@@ -45,8 +52,9 @@ export class SubnetScene {
   private pinned = -1;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
-  private azimuth = 0.4;
-  private polar = 0.95;
+  private azimuth: number;
+  private polar: number;
+  private distanceScale: number;
   private distance = 30;
   private currentDistance = 30;
   // multiplies the distance; below 1 is closer
@@ -54,7 +62,10 @@ export class SubnetScene {
   private frame = 0;
 
   // throws when WebGL is unavailable
-  constructor(private container: HTMLElement, private tooltip: HTMLElement) {
+  constructor(private container: HTMLElement, private tooltip: HTMLElement, view: SceneView = {}) {
+    this.azimuth = view.azimuth ?? 0.4;
+    this.polar = view.polar ?? 0.95;
+    this.distanceScale = view.distanceScale ?? 1;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setClearColor(0x1a1c1c);
@@ -90,7 +101,7 @@ export class SubnetScene {
 
     this.setGroupLabels(cells, groupLabels);
     this.highlightGroup(-1);
-    this.distance = Math.max(width, depth) * 1.4 + 5;
+    this.distance = (Math.max(width, depth) * 1.4 + 5) * this.distanceScale;
     this.pinned = -1;
     this.requestRender();
   }

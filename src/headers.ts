@@ -1,8 +1,9 @@
 // IPv4, IPv6, TCP and UDP header layouts, and a decoder for packets pasted as hex
 
 import { intToIp } from './subnet';
+import type { Cell } from './subnet3d';
 import { formatIpv6 } from './ipv6';
-import { escapeHtml } from './view';
+import { escapeHtml, vlsmColors } from './view';
 
 export type HeaderKind = 'ipv4' | 'ipv6' | 'tcp' | 'udp';
 
@@ -27,6 +28,7 @@ export interface DecodedLayer {
   kind: HeaderKind;
   title: string;
   length: number;       // header bytes
+  bytes: Uint8Array;    // the header itself
   cells: GridCell[];
 }
 
@@ -412,7 +414,7 @@ const decodeIpv4 = function(bytes: Uint8Array, notes: DecodeNote[]): LayerResult
     notes.push({ text: `Ignored ${r.length - totalLength} bytes after the packet's Total Length, such as Ethernet padding.`, warning: false });
   }
 
-  const layer = { kind: 'ipv4' as const, title: 'IPv4 header', length: headerLength, cells };
+  const layer = { kind: 'ipv4' as const, title: 'IPv4 header', length: headerLength, bytes: header, cells };
   const data = r.slice(headerLength, end);
   const kind = transportKind(protocol);
   if (fragmentOffset > 0) {
@@ -470,7 +472,7 @@ const decodeIpv6 = function(bytes: Uint8Array, notes: DecodeNote[]): LayerResult
     notes.push({ text: `Ignored ${r.length - end} bytes after the packet's Payload Length, such as Ethernet padding.`, warning: false });
   }
 
-  const layer = { kind: 'ipv6' as const, title: 'IPv6 header', length: 40, cells };
+  const layer = { kind: 'ipv6' as const, title: 'IPv6 header', length: 40, bytes: r.slice(0, 40), cells };
   const data = r.slice(40, end);
   const kind = transportKind(nextHeader);
   if (kind === null) {
@@ -533,7 +535,7 @@ const decodeTcp = function(bytes: Uint8Array, pseudo: PseudoHeader | null, notes
   if (headerLength > 20) {
     cells.push(optionsCell(optionsAbout.tcp, r.slice(20, headerLength), tcpOptions(r.slice(20, headerLength))));
   }
-  return { layer: { kind: 'tcp', title: 'TCP header', length: headerLength, cells }, next: null, payload: r.slice(headerLength) };
+  return { layer: { kind: 'tcp', title: 'TCP header', length: headerLength, bytes: r.slice(0, headerLength), cells }, next: null, payload: r.slice(headerLength) };
 }
 
 const decodeUdp = function(bytes: Uint8Array, pseudo: PseudoHeader | null, notes: DecodeNote[]): LayerResult | null {
@@ -558,7 +560,7 @@ const decodeUdp = function(bytes: Uint8Array, pseudo: PseudoHeader | null, notes
     cell(f, 'Length', `${length} bytes`),
     cell(f, 'Checksum', unused ? '0x0000 (none)' : transportChecksum(segment, 6, pseudo && { ...pseudo, complete: pseudo.complete && length === r.length })),
   ];
-  return { layer: { kind: 'udp', title: 'UDP header', length: 8, cells }, next: null, payload: r.slice(8, Math.max(8, Math.min(length, r.length))) };
+  return { layer: { kind: 'udp', title: 'UDP header', length: 8, bytes: r.slice(0, 8), cells }, next: null, payload: r.slice(8, Math.max(8, Math.min(length, r.length))) };
 }
 
 // what a pasted packet starts with: an Ethernet frame (with or without a VLAN tag), IPv4 or IPv6
@@ -623,24 +625,89 @@ const rowLabel = function(text: string): string {
   return `<span class="grid-row">${escapeHtml(text)}</span>`;
 }
 
-// a grid of 32-bit rows: bit numbers across the top and byte offsets down the side
-export const headerGrid = function(cells: GridCell[]): string {
+// a grid of 32-bit rows: bit numbers across the top and byte offsets down the side;
+// with firstGroup, each field is tagged with its group in the 3D view (see packetCells)
+export const headerGrid = function(cells: GridCell[], firstGroup?: number): string {
   const columns = `<span class="grid-corner" title="Byte offset ↓ / bit ➝"></span>${Array.from({ length: 32 }, (_, i) => `<span class="grid-bit">${i}</span>`).join('')}`;
   let offset = 0;
-  const body = cells.map(entry => {
+  const body = cells.map((entry, i) => {
     // a field longer than a row spans whole rows, and the labels of the rows it covers follow it
     const rows = Math.max(1, entry.bits / 32);
     const span = `grid-column: span ${Math.min(entry.bits, 32)};${rows > 1 ? ` grid-row: span ${rows};` : ''}`;
     const classes = `grid-field${entry.set ? ' set' : ''}${entry.bits <= 2 ? ' narrow' : ''}`;
     const value = entry.value === undefined ? '' : `<span class="field-value">${escapeHtml(entry.value)}</span>`;
     const title = entry.value === undefined ? entry.about : `${entry.name}: ${entry.value}\n${entry.about}`;
+    const group = firstGroup === undefined ? '' : ` data-group="${firstGroup + i}"`;
     const html = [
       offset % 32 === 0 ? rowLabel(entry.rowLabel ?? String(offset / 8)) : '',
-      `<span class="${classes}" style="${span}" title="${escapeHtml(title)}"><span class="field-name">${escapeHtml(entry.name)}</span>${value}</span>`,
+      `<span class="${classes}" style="${span}"${group} title="${escapeHtml(title)}"><span class="field-name">${escapeHtml(entry.name)}</span>${value}</span>`,
       ...Array.from({ length: rows - 1 }, (_, i) => rowLabel(String(offset / 8 + (i + 1) * 4))),
     ].join('');
     offset += entry.bits;
     return html;
   }).join('');
   return columns + body;
+}
+
+// how many payload bytes the 3D view draws
+const payloadBlockBytes = 32;
+
+// the group of each layer's first field in the 3D view; the payload's group follows the last layer's fields
+export const firstGroups = function(packet: DecodedPacket): number[] {
+  let next = 0;
+  return [...packet.layers, null].map(layer => {
+    const first = next;
+    next += layer ? layer.cells.length : 0;
+    return first;
+  });
+}
+
+const bitHeight = { one: 1.4, zero: 0.2 };
+
+// one block per bit, 32 to a row like the grids: tall for 1, flat for 0, one tier per header and one for the
+// start of the payload; each field is a group with a label
+export const packetCells = function(packet: DecodedPacket): { cells: Cell[]; labels: string[] } {
+  const cells: Cell[] = [];
+  const labels: string[] = [];
+  const groups = firstGroups(packet);
+  let row = 0;
+
+  const addBits = function(bytes: Uint8Array, start: number, count: number, tier: number, color: number, group: number, label: (bit: number, value: number) => string): void {
+    for (let k = 0; k < count; k++) {
+      const bit = start + k;
+      const value = (bytes[bit >> 3] >> (7 - (bit & 7))) & 1;
+      cells.push({
+        color,
+        height: value ? bitHeight.one : bitHeight.zero,
+        label: label(k, value),
+        group,
+        // two gaps between tiers, so the headers stand apart
+        position: { col: bit % 32, row: row + Math.floor(bit / 32), gapCols: 0, gapRows: tier * 2 },
+      });
+    }
+  }
+
+  packet.layers.forEach((layer, tier) => {
+    const name = layer.title.replace(/ header$/, '');
+    let offset = 0;
+    layer.cells.forEach((field, i) => {
+      addBits(layer.bytes, offset, field.bits, tier, vlsmColors[i % vlsmColors.length], groups[tier] + i,
+        (k, value) => `${name} ${field.name}: ${field.value}\nbit ${k + 1} of ${field.bits}: ${value}`);
+      labels[groups[tier] + i] = `${name} ${field.name}`;
+      offset += field.bits;
+    });
+    row += layer.length / 4;
+  });
+
+  const shown = packet.payload.subarray(0, payloadBlockBytes);
+  if (packet.layers.length > 0 && shown.length > 0) {
+    const group = groups[packet.layers.length];
+    addBits(shown, 0, shown.length * 8, packet.layers.length, 0x9aa0a0, group, (k, value) => {
+      const byte = shown[k >> 3];
+      const char = byte >= 0x20 && byte < 0x7f ? ` '${String.fromCharCode(byte)}'` : '';
+      return `Payload byte ${k >> 3}: 0x${byte.toString(16).padStart(2, '0')}${char}\nbit ${(k & 7) + 1} of 8: ${value}`;
+    });
+    labels[group] = packet.payload.length > shown.length ? `Payload (first ${shown.length} of ${packet.payload.length} bytes)` : 'Payload';
+  }
+  return { cells, labels };
 }

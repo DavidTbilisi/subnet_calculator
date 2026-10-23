@@ -258,7 +258,14 @@
           <span class="decode-examples" id="decode-examples"></span>
         </div>
         <textarea id="decode-input" rows="4" spellcheck="false" aria-label="Packet bytes in hex"></textarea>
-        <div class="decode-output" id="decode-output" aria-live="polite"></div>
+        <div class="decode-summary" id="decode-summary" aria-live="polite"></div>
+        <div class="packet-3d-wrap" id="packet-3d-wrap">
+          <div class="subnet-3d packet-3d" id="packet-3d" tabindex="0" role="application" aria-label="3D view of the packet's bits; the grids below list the same fields" aria-describedby="packet-hint">
+            <div class="subnet-tooltip" id="packet-tooltip" hidden></div>
+          </div>
+          <p class="subnet-hint" id="packet-hint">One block per bit, 32 to a row: tall for 1, flat for 0, one tier per header and one for the first 32 bytes of the payload. Drag to rotate, pinch or Ctrl + scroll to zoom. Hover a block or a field below to highlight the field in both, click to pin it. Keys on the focused view: arrows rotate, + and - zoom, [ and ] step through fields.</p>
+        </div>
+        <div class="decode-output" id="decode-output"></div>
       </section>
     </div>
   </body>
