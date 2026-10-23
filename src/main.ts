@@ -3,6 +3,7 @@ import { classfulPrefix, intToIp, parseCidr, planVlsm, prefixToMask, subnetInfo,
 import type { VlsmRequest } from './subnet';
 import { formatIpv6, parseIpv6, subnetInfo6, subnetWindow6 } from './ipv6';
 import type { Cell, SubnetScene } from './subnet3d';
+import { initPackets } from './packets';
 import { initTheme, themeColor } from './theme';
 import { initTools } from './tools';
 import { decodeState, encodeState } from './urlState';
@@ -496,6 +497,7 @@ window.addEventListener('hashchange', () => applyState(decodeState(location.hash
 
 applyState(decodeState(location.hash, defaults));
 initTools();
+initPackets();
 initTheme(themeToggle, () => scene?.setBackground(themeColor('--scene-bg')));
 
 // start loading a little before the grid is visible; it is hidden for IPv6, so that waits until it is shown

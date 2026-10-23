@@ -239,43 +239,6 @@ h4 {
 }
 
 
-.tcp-headers {
-    // on narrow screens the grid scrolls sideways so the one-bit flags stay readable
-    overflow-x: auto;
-
-    .header-grid{
-        display: grid;
-        grid-template-columns: repeat(33, 1fr);
-        min-width: 760px;
-        $sizes: 1, 4, 16, 32;
-        @each $i in $sizes{
-            .bit#{$i} {
-                grid-column: span #{$i};
-            }
-        }
-
-        span {
-            color: var(--tcp-text);
-            box-shadow: 0 0 0px 1px var(--tcp-border);
-            padding: 5px;
-            text-align: center;
-
-        }
-    }
-
-    a {
-        color: inherit;
-    }
-
-    .tcp-note {
-        margin-top: 15px;
-        line-height: 1.5;
-    }
-
-    margin-bottom: 200px;
-}
-
-
 $network-color: #e72f2f;
 $subnet-color: #ffbd2e;
 $host-color: #2e3cff;
@@ -826,5 +789,163 @@ $host-color: #2e3cff;
         &.tool-error {
             color: #ff8a80;
         }
+    }
+}
+
+.packet-headers {
+    margin-bottom: 200px;
+
+    p {
+        margin: 10px 0;
+        line-height: 1.5;
+    }
+
+    a {
+        color: inherit;
+    }
+
+    h3 {
+        margin-top: 30px;
+    }
+
+    h4 {
+        margin: 20px 0 8px;
+    }
+
+    .header-tabs {
+        display: inline-flex;
+        border: 2px solid var(--frame);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .header-tab {
+        padding: 6px 16px;
+        border: none;
+        background-color: var(--control-bg);
+        color: var(--text);
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1rem;
+        cursor: pointer;
+
+        &[aria-pressed="true"] {
+            background-color: var(--frame);
+            color: #fff;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $subnet-color;
+            outline-offset: -4px;
+        }
+    }
+
+    // on narrow screens a grid scrolls sideways so the one-bit flags stay readable
+    .header-scroll {
+        overflow-x: auto;
+        padding: 1px;
+    }
+
+    .header-grid {
+        display: grid;
+        grid-template-columns: repeat(33, 1fr);
+        min-width: 760px;
+
+        > span {
+            padding: 5px;
+            color: var(--tcp-text);
+            text-align: center;
+            box-shadow: 0 0 0 1px var(--tcp-border);
+        }
+
+        .grid-row, .grid-field {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .grid-field {
+            overflow-wrap: anywhere;
+        }
+
+        .narrow {
+            padding: 5px 1px;
+            font-size: 0.8em;
+        }
+
+        .field-value {
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+        }
+
+        .set {
+            background-color: $subnet-color;
+
+            &, .field-value {
+                color: #000;
+            }
+        }
+    }
+
+    .decode-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .decode-examples {
+        display: contents;
+    }
+
+    select, textarea, .decode-example {
+        padding: 4px 8px;
+        background-color: var(--control-bg);
+        color: var(--text);
+        border: 1px solid var(--control-border);
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1rem;
+    }
+
+    .decode-example {
+        cursor: pointer;
+
+        &:hover, &:focus-visible {
+            border-color: $subnet-color;
+        }
+    }
+
+    textarea {
+        width: 100%;
+        resize: vertical;
+        word-break: break-all;
+    }
+
+    .decode-size {
+        color: var(--muted);
+        font-size: 0.9em;
+        font-weight: normal;
+    }
+
+    .decode-notes {
+        margin: 10px 0;
+        padding-left: 20px;
+        list-style: disc;
+    }
+
+    .warning {
+        color: var(--network-text);
+    }
+
+    .decode-payload {
+        padding: 8px 10px;
+        overflow-x: auto;
+        background-color: #1a1c1c;
+        color: #fff;
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.95rem;
     }
 }

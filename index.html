@@ -228,71 +228,37 @@
       </section>
     </div>
     <div class="container">
-      <section class="tcp-headers">
-        <h2>TCP Headers</h2>
-        <p>The Transmission Control Protocol (TCP) is a connection-oriented protocol that gives applications reliable, ordered, error-checked delivery of a stream of bytes over IP. HTTP/1.1 and HTTP/2, TLS, SSH, SMTP and many other protocols run on it (HTTP/3 uses QUIC over UDP instead). The header layout below is from <a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc9293#section-3.1">RFC 9293</a>, which replaced RFC 793 in 2022. Hover a field for a description.</p><br>
-        <div class="header-grid">
-          <span title="Byte👇 / Bit👉"></span>
-          <span>0</span>
-          <span>1</span>
-          <span>2</span>
-          <span>3</span>
-          <span>4</span>
-          <span>5</span>
-          <span>6</span>
-          <span>7</span>
-          <span>8</span>
-          <span>9</span>
-          <span>10</span>
-          <span>11</span>
-          <span>12</span>
-          <span>13</span>
-          <span>14</span>
-          <span>15</span>
-          <span>16</span>
-          <span>17</span>
-          <span>18</span>
-          <span>19</span>
-          <span>20</span>
-          <span>21</span>
-          <span>22</span>
-          <span>23</span>
-          <span>24</span>
-          <span>25</span>
-          <span>26</span>
-          <span>27</span>
-          <span>28</span>
-          <span>29</span>
-          <span>30</span>
-          <span>31</span>
-          <span class="bit1 tcp-row">0</span>
-          <span class="bit16" title="Port of the sending application">Source Port</span>
-          <span class="bit16" title="Port of the receiving application, such as 443 for HTTPS">Destination Port</span>
-          <span class="bit1 tcp-row">4</span>
-          <span class="bit32" title="Number of the first data byte in this segment. With SYN set, the initial sequence number (ISN)">Sequence Number</span>
-          <span class="bit1 tcp-row">8</span>
-          <span class="bit32" title="When ACK is set, the next sequence number the sender expects to receive">Acknowledgment Number</span>
-          <span class="bit1 tcp-row">12</span>
-          <span class="bit4" title="Header length in 32-bit words, from 5 (20 bytes) to 15 (60 bytes); the data starts after it">Data Offset</span>
-          <span class="bit4" title="Reserved for future use; must be zero">Reserved</span>
-          <span class="bit1" title="Congestion Window Reduced: the sender has reduced its sending rate after an ECE (RFC 3168)">CWR</span>
-          <span class="bit1" title="ECN-Echo: the receiver saw a congestion mark from the network (RFC 3168)">ECE</span>
-          <span class="bit1" title="Urgent: the Urgent Pointer field is significant">URG</span>
-          <span class="bit1" title="Acknowledgment: the Acknowledgment Number field is significant; set on every segment after the initial SYN">ACK</span>
-          <span class="bit1" title="Push: deliver the buffered data to the application without waiting for more">PSH</span>
-          <span class="bit1" title="Reset: abort the connection immediately">RST</span>
-          <span class="bit1" title="Synchronize: opens a connection and sets the initial sequence number">SYN</span>
-          <span class="bit1" title="Finish: the sender has no more data and is closing its side of the connection">FIN</span>
-          <span class="bit16" title="Number of bytes the receiver is willing to accept, scaled by the Window Scale option (RFC 7323)"><a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc7323#section-2">Window Size</a></span>
-          <span class="bit1 tcp-row">16</span>
-          <span class="bit16" title="Ones' complement checksum over the header, the data and a pseudo-header of the IP addresses, protocol and length">Checksum</span>
-          <span class="bit16" title="When URG is set, the offset from the sequence number to the end of the urgent data">Urgent Pointer</span>
-          <span class="bit1 tcp-row">20</span>
-          <span class="bit32" title="Up to 40 bytes, such as Maximum Segment Size, Window Scale, SACK and Timestamps; padded with zeros to a multiple of 32 bits">Options (if any, variable length)</span>
-          <span class="bit1 tcp-row" title="Data Offset × 4: byte 20 without options, up to byte 60">20+</span>
-          <span class="bit32" title="The payload; it starts at Data Offset × 4 bytes">Data</span>
+      <section class="packet-headers" id="headers">
+        <h2>Packet Headers</h2>
+        <div class="header-tabs" role="group" aria-label="Header">
+          <button class="header-tab" type="button" data-header="ipv4" aria-pressed="false">IPv4</button>
+          <button class="header-tab" type="button" data-header="ipv6" aria-pressed="false">IPv6</button>
+          <button class="header-tab" type="button" data-header="tcp" aria-pressed="true">TCP</button>
+          <button class="header-tab" type="button" data-header="udp" aria-pressed="false">UDP</button>
         </div>
-        <p class="tcp-note">Rows are byte offsets and columns are bit numbers. Without options the header is 20 bytes; options can grow it to 60. Common options are Maximum Segment Size (sent with SYN), Window Scale and Timestamps (<a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc7323">RFC 7323</a>) and Selective Acknowledgment (<a target="_blank" rel="noopener" href="https://www.rfc-editor.org/rfc/rfc2018">RFC 2018</a>).</p>
+        <p class="header-about" id="header-about"></p>
+        <div class="header-scroll">
+          <div class="header-grid" id="header-grid"></div>
+        </div>
+        <p class="header-note" id="header-note"></p>
+
+        <h3>Decode a packet</h3>
+        <p>Paste a packet as hex, for example from Wireshark (right-click a packet, then Copy → …as a Hex Stream) or <code>tcpdump -xx</code>. An Ethernet frame, IPv4 or IPv6 packet is recognized on its own, and the TCP or UDP header inside it is decoded with its checksum checked.</p>
+        <div class="decode-controls">
+          <label>Starts with
+            <select id="decode-start">
+              <option value="auto">Detect</option>
+              <option value="ipv4">IPv4</option>
+              <option value="ipv6">IPv6</option>
+              <option value="tcp">TCP</option>
+              <option value="udp">UDP</option>
+            </select>
+          </label>
+          <span>Examples:</span>
+          <span class="decode-examples" id="decode-examples"></span>
+        </div>
+        <textarea id="decode-input" rows="4" spellcheck="false" aria-label="Packet bytes in hex"></textarea>
+        <div class="decode-output" id="decode-output" aria-live="polite"></div>
       </section>
     </div>
   </body>
