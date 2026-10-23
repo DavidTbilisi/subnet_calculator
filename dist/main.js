@@ -1,7 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.detectIpClass = void 0;
-const ip = '10.10.1.1';
 // detect IP Class
 const detectIpClass = function (ip) {
     const firstOctet = parseInt(ip.split('.')[0]);
@@ -24,5 +21,32 @@ const detectIpClass = function (ip) {
         return 'Invalid IP';
     }
 };
-
-exports.detectIpClass = detectIpClass;
+// four dot-separated octets, each 0-255
+const isValidIp = function (ip) {
+    const octets = ip.split('.');
+    return octets.length === 4 && octets.every(octet => /^\d{1,3}$/.test(octet) && parseInt(octet) <= 255);
+};
+const classTypes = {
+    A: 'Unicast',
+    B: 'Unicast',
+    C: 'Unicast',
+    D: 'Multicast',
+    E: 'Experimental',
+};
+// wire up the input
+if (typeof document !== 'undefined') {
+    const ipInput = document.getElementById('ip');
+    const ipResult = document.getElementById('ip-result');
+    ipInput.addEventListener('input', function () {
+        const ip = ipInput.value.trim();
+        if (ip === '') {
+            ipResult.textContent = '';
+            return;
+        }
+        const ipClass = isValidIp(ip) ? detectIpClass(ip) : 'Invalid IP';
+        ipResult.textContent = ipClass in classTypes ? `Class ${ipClass} (${classTypes[ipClass]})` : ipClass;
+    });
+}
+if (typeof module !== 'undefined') {
+    module.exports = { detectIpClass };
+}
