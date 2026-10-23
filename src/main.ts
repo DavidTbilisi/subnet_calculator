@@ -2,7 +2,7 @@ import './style.scss';
 import { classfulPrefix, intToIp, parseCidr, planVlsm, prefixToMask, subnetInfo, subnetLayout } from './subnet';
 import type { VlsmRequest } from './subnet';
 import { formatIpv6, parseIpv6, subnetInfo6, subnetWindow6 } from './ipv6';
-import { SubnetScene } from './subnet3d';
+import type { Cell, SubnetScene } from './subnet3d';
 import { initTheme, themeColor } from './theme';
 import { initTools } from './tools';
 import { decodeState, encodeState } from './urlState';
@@ -37,14 +37,11 @@ const vlsmTableWrap = document.getElementById('vlsm-table-wrap') as HTMLElement;
 const vlsmRows = document.getElementById('vlsm-rows') as HTMLElement;
 const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
 
-// the rest of the page still works if WebGL is unavailable
+// three.js is most of the page's code, so the 3D view is loaded once it is about to scroll into view;
+// until then (and if WebGL is unavailable) scene is null and the rest of the page works without it
 let scene: SubnetScene | null = null;
-try {
-  scene = new SubnetScene(sceneContainer, tooltip);
-} catch (error) {
-  sceneContainer.classList.add('subnet-3d-unavailable');
-  sceneContainer.textContent = '3D view unavailable in this browser.';
-}
+// what the scene shows, kept so a scene that loads later starts from the current view
+let sceneContent: { cells: Cell[]; labels: string[] } | null = null;
 
 // IPv6 networks are split from a /48 (a typical site) unless a parent prefix is set
 const defaultParent6 = 48;
@@ -150,9 +147,7 @@ const renderSubnetting = function(ip: number, prefix: number, parentPrefix: numb
     ? Array.from({ length: layout.subnetCount }, (_, i) => `#${formatCount(firstIndex + i + 1)}\n${intToIp(layout.blockNetwork + i * subnetSize)}/${prefix}`)
     : [];
 
-  if (scene) {
-    scene.update(subnetCells(ip, prefix, layout), labels);
-  }
+  drawScene(subnetCells(ip, prefix, layout), labels);
 }
 
 // IPv6 gets the caption and table only: 128 bits and 2^64-address subnets do not fit the bit view or the grid
@@ -234,9 +229,7 @@ const renderVlsm = function(): void {
   // label the subnets (not the free space) big enough to hold a label: at least 1/16 of the network
   const labels = plan.blocks.map(block => block.name !== null && 2 ** (32 - block.prefix) >= size / 16 ? `${block.name}\n${blockCidr(block)}` : '');
 
-  if (scene) {
-    scene.update(vlsmCells(plan.blocks), labels);
-  }
+  drawScene(vlsmCells(plan.blocks), labels);
   pinnedVlsm = -1;
 }
 
@@ -304,12 +297,8 @@ const selectGroup = function(group: number): void {
   scene?.pinGroup(pinnedVlsm);
 }
 
-// hovering a subnet in the 3D grid or the table highlights it in both
-if (scene) {
-  scene.onHoverGroup = highlightRow;
-  scene.onSelectGroup = selectGroup;
-}
-[rows, vlsmRows].forEach(tbody => {
+// hovering a subnet in the table highlights it in the 3D grid, and clicking selects it
+for (const tbody of [rows, vlsmRows]) {
   tbody.addEventListener('mouseover', function(e) {
     const row = (e.target as HTMLElement).closest('tr');
     const group = row ? Array.from(tbody.children).indexOf(row) : -1;
@@ -327,7 +316,35 @@ if (scene) {
     highlightRow(-1);
     scene?.highlightGroup(-1);
   });
-});
+}
+
+const drawScene = function(cells: Cell[], labels: string[]): void {
+  sceneContent = { cells, labels };
+  scene?.update(cells, labels);
+}
+
+const loadScene = async function(): Promise<void> {
+  sceneContainer.classList.add('subnet-3d-loading');
+  try {
+    const { SubnetScene } = await import('./subnet3d');
+    scene = new SubnetScene(sceneContainer, tooltip);
+  } catch (error) {
+    sceneContainer.classList.add('subnet-3d-unavailable');
+    sceneContainer.textContent = '3D view unavailable in this browser.';
+    return;
+  } finally {
+    sceneContainer.classList.remove('subnet-3d-loading');
+  }
+
+  // hovering a subnet in the 3D grid or the table highlights it in both
+  scene.onHoverGroup = highlightRow;
+  scene.onSelectGroup = selectGroup;
+  scene.setBackground(themeColor('--scene-bg'));
+  if (sceneContent) {
+    scene.update(sceneContent.cells, sceneContent.labels);
+  }
+  scene.pinGroup(mode === 'vlsm' ? pinnedVlsm : -1);
+}
 
 const showInvalid = function(): void {
   // keep the last visualization while the address is being typed
@@ -480,3 +497,12 @@ window.addEventListener('hashchange', () => applyState(decodeState(location.hash
 applyState(decodeState(location.hash, defaults));
 initTools();
 initTheme(themeToggle, () => scene?.setBackground(themeColor('--scene-bg')));
+
+// start loading a little before the grid is visible; it is hidden for IPv6, so that waits until it is shown
+const sceneObserver = new IntersectionObserver(entries => {
+  if (entries.some(entry => entry.isIntersecting)) {
+    sceneObserver.disconnect();
+    loadScene();
+  }
+}, { rootMargin: '300px' });
+sceneObserver.observe(sceneContainer);
