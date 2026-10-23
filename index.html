@@ -149,6 +149,26 @@
             </div>
             <pre class="tool-result" id="contains-result"></pre>
           </div>
+          <div class="tool">
+            <h3>Overlaps</h3>
+            <p>Find networks in a list that overlap or repeat, such as clashing routes or address plans.</p>
+            <textarea id="overlaps-input" rows="5" spellcheck="false" aria-label="Networks to check for overlaps">10.0.0.0/16
+10.0.4.0/22
+172.16.0.0/24
+10.1.0.0/16
+172.16.0.0/24</textarea>
+            <pre class="tool-result" id="overlaps-result"></pre>
+          </div>
+          <div class="tool">
+            <h3>Subtract</h3>
+            <p>The fewest CIDR blocks left in the first networks after removing the second. Separate several with spaces or commas.</p>
+            <div class="tool-inputs">
+              <input id="subtract-from" type="text" value="10.0.0.0/16" spellcheck="false" aria-label="Networks to subtract from">
+              <span>minus</span>
+              <input id="subtract-exclude" type="text" value="10.0.5.0/24, 10.0.128.0/17" spellcheck="false" aria-label="Networks to remove">
+            </div>
+            <pre class="tool-result" id="subtract-result"></pre>
+          </div>
         </div>
       </section>
     </div>

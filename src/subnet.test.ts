@@ -217,6 +217,29 @@ describe("Summarization", () => {
     expect(subnet.contains(block, subnet.ipToInt("10.15.255.255"))).toBe(true);
     expect(subnet.contains(block, subnet.ipToInt("10.16.0.0"))).toBe(false);
   });
+
+  it("should subtract blocks", () => {
+    expect(text(subnet.subtract(blocks("10.0.0.0/16"), blocks("10.0.5.0/24")))).toEqual([
+      "10.0.0.0/22", "10.0.4.0/24", "10.0.6.0/23", "10.0.8.0/21", "10.0.16.0/20", "10.0.32.0/19", "10.0.64.0/18", "10.0.128.0/17",
+    ]);
+    expect(text(subnet.subtract(blocks("10.0.0.0/24", "10.0.2.0/24"), blocks("10.0.0.0/25", "10.0.1.0/24", "10.0.2.128/25")))).toEqual(["10.0.0.128/25", "10.0.2.0/25"]);
+  });
+
+  it("should keep blocks the exclusions miss, and drop blocks they cover", () => {
+    expect(text(subnet.subtract(blocks("10.0.0.0/24"), blocks("192.168.0.0/16")))).toEqual(["10.0.0.0/24"]);
+    expect(text(subnet.subtract(blocks("10.0.1.0/24"), blocks("10.0.0.0/8")))).toEqual([]);
+    expect(text(subnet.subtract(blocks("0.0.0.0/0"), blocks("0.0.0.0/1")))).toEqual(["128.0.0.0/1"]);
+  });
+
+  it("should find overlapping and duplicate blocks", () => {
+    expect(subnet.findOverlaps(blocks("10.0.0.0/24", "10.0.1.0/24", "10.0.0.0/16", "10.0.1.0/24", "192.168.0.0/16"))).toEqual([
+      { outer: 2, inner: 0, duplicate: false },
+      { outer: 2, inner: 1, duplicate: false },
+      { outer: 1, inner: 3, duplicate: true },
+      { outer: 2, inner: 3, duplicate: false },
+    ]);
+    expect(subnet.findOverlaps(blocks("10.0.0.0/25", "10.0.0.128/25"))).toEqual([]);
+  });
 });
 
 describe("VLSM /31 links", () => {

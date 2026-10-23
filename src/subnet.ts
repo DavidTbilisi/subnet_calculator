@@ -41,6 +41,18 @@ export interface CidrBlock {
   prefix: number;
 }
 
+export interface AddressRange {
+  start: number;
+  end: number;      // last address, included
+}
+
+// indices into the checked list: the block at `outer` contains the one at `inner`
+export interface Overlap {
+  outer: number;
+  inner: number;
+  duplicate: boolean;
+}
+
 export interface VlsmBlock extends CidrBlock {
   name: string | null;   // null for free space
   hosts: number;         // hosts needed; 0 for free space
@@ -213,15 +225,14 @@ export const rangeToCidrs = function(start: number, end: number): CidrBlock[] {
   return freeBlocks(start, end + 1).map(({ network, prefix }) => ({ network, prefix }));
 }
 
-// the fewest CIDR blocks covering exactly the addresses of the given blocks (route summarization)
-export const summarize = function(blocks: CidrBlock[]): CidrBlock[] {
+// the address ranges the blocks cover, sorted, with overlapping and touching ranges merged
+const mergedRanges = function(blocks: CidrBlock[]): AddressRange[] {
   const ranges = blocks
     .map(block => subnetInfo(block.network, block.prefix))
     .map(info => ({ start: info.network, end: info.broadcast }))
     .sort((a, b) => a.start - b.start);
 
-  // merge overlapping and touching ranges, then split each into aligned blocks
-  const merged: { start: number; end: number }[] = [];
+  const merged: AddressRange[] = [];
   ranges.forEach(range => {
     const last = merged[merged.length - 1];
     if (last && range.start <= last.end + 1) {
@@ -230,7 +241,45 @@ export const summarize = function(blocks: CidrBlock[]): CidrBlock[] {
       merged.push({ ...range });
     }
   });
-  return merged.flatMap(range => rangeToCidrs(range.start, range.end));
+  return merged;
+}
+
+// the fewest CIDR blocks covering exactly the addresses of the given blocks (route summarization)
+export const summarize = function(blocks: CidrBlock[]): CidrBlock[] {
+  return mergedRanges(blocks).flatMap(range => rangeToCidrs(range.start, range.end));
+}
+
+// the fewest CIDR blocks covering the addresses of `blocks` that are not in `excluded`
+export const subtract = function(blocks: CidrBlock[], excluded: CidrBlock[]): CidrBlock[] {
+  const holes = mergedRanges(excluded);
+  return mergedRanges(blocks).flatMap(range => {
+    // walk the sorted holes, keeping the parts of the range between them
+    const kept: AddressRange[] = [];
+    let start = range.start;
+    holes.filter(hole => hole.end >= range.start && hole.start <= range.end).forEach(hole => {
+      if (hole.start > start) {
+        kept.push({ start, end: hole.start - 1 });
+      }
+      start = Math.max(start, hole.end + 1);
+    });
+    if (start <= range.end) {
+      kept.push({ start, end: range.end });
+    }
+    return kept.flatMap(part => rangeToCidrs(part.start, part.end));
+  });
+}
+
+// pairs of blocks that share addresses; two CIDR blocks overlap only when one contains the other
+export const findOverlaps = function(blocks: CidrBlock[]): Overlap[] {
+  const overlaps: Overlap[] = [];
+  blocks.forEach((a, i) => blocks.slice(i + 1).forEach((b, offset) => {
+    const j = i + 1 + offset;
+    const [outer, inner] = a.prefix <= b.prefix ? [i, j] : [j, i];
+    if (contains(blocks[outer], blocks[inner].network)) {
+      overlaps.push({ outer, inner, duplicate: a.prefix === b.prefix });
+    }
+  }));
+  return overlaps;
 }
 
 // the smallest single block containing all the given blocks

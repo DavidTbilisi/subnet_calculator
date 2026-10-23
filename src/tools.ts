@@ -1,6 +1,6 @@
-// the Tools section: route summarization, range to CIDR, and contains
+// the Tools section: route summarization, range to CIDR, contains, overlaps and subtract
 
-import { contains, intToIp, ipToInt, isValidIp, parseCidr, rangeToCidrs, subnetInfo, summarize, supernet } from './subnet';
+import { contains, findOverlaps, intToIp, ipToInt, isValidIp, parseCidr, rangeToCidrs, subnetInfo, subtract, summarize, supernet } from './subnet';
 import type { CidrBlock } from './subnet';
 import { formatCount } from './view';
 
@@ -22,6 +22,19 @@ const parseBlock = function(text: string): CidrBlock | null {
   return { network: subnetInfo(cidr.ip, prefix).network, prefix };
 }
 
+// networks separated by spaces, commas or new lines; an error message names the ones that do not parse
+const parseList = function(text: string): { blocks: CidrBlock[]; error: string | null } {
+  const tokens = text.split(/[\s,]+/).filter(token => token !== '');
+  const invalid = tokens.filter(token => !parseBlock(token));
+  if (tokens.length === 0) {
+    return { blocks: [], error: 'Enter one or more IPv4 networks.' };
+  }
+  if (invalid.length > 0) {
+    return { blocks: [], error: `Not an IPv4 network: ${invalid.join(', ')}` };
+  }
+  return { blocks: tokens.map(token => parseBlock(token)!), error: null };
+}
+
 const showResult = function(element: HTMLElement, text: string, isError = false): void {
   element.textContent = text;
   element.classList.toggle('tool-error', isError);
@@ -41,20 +54,19 @@ export const initTools = function(): void {
   const containsIp = document.getElementById('contains-ip') as HTMLInputElement;
   const containsNetwork = document.getElementById('contains-network') as HTMLInputElement;
   const containsResult = document.getElementById('contains-result') as HTMLElement;
+  const overlapsInput = document.getElementById('overlaps-input') as HTMLTextAreaElement;
+  const overlapsResult = document.getElementById('overlaps-result') as HTMLElement;
+  const subtractFrom = document.getElementById('subtract-from') as HTMLInputElement;
+  const subtractExclude = document.getElementById('subtract-exclude') as HTMLInputElement;
+  const subtractResult = document.getElementById('subtract-result') as HTMLElement;
 
   const updateSummarize = function(): void {
-    const tokens = summarizeInput.value.split(/[\s,]+/).filter(token => token !== '');
-    const invalid = tokens.filter(token => !parseBlock(token));
-    if (tokens.length === 0) {
-      showResult(summarizeResult, 'Enter one or more IPv4 networks.', true);
-      return;
-    }
-    if (invalid.length > 0) {
-      showResult(summarizeResult, `Not an IPv4 network: ${invalid.join(', ')}`, true);
+    const { blocks, error } = parseList(summarizeInput.value);
+    if (error) {
+      showResult(summarizeResult, error, true);
       return;
     }
 
-    const blocks = tokens.map(token => parseBlock(token)!);
     const summary = summarize(blocks);
     const covering = supernet(blocks);
     const extra = blockSize(covering) - summary.reduce((sum, block) => sum + blockSize(block), 0);
@@ -87,10 +99,46 @@ export const initTools = function(): void {
     showResult(containsResult, `${ip} ${verdict} ${cidrText(block)}\n(${intToIp(info.network)} - ${intToIp(info.broadcast)})`);
   }
 
+  const updateOverlaps = function(): void {
+    const { blocks, error } = parseList(overlapsInput.value);
+    if (error) {
+      showResult(overlapsResult, error, true);
+      return;
+    }
+
+    const overlaps = findOverlaps(blocks);
+    if (overlaps.length === 0) {
+      showResult(overlapsResult, `No overlaps among ${blocks.length} ${blocks.length === 1 ? 'network' : 'networks'}.`);
+      return;
+    }
+    // number the networks as listed, so repeated ones can be told apart
+    const label = (i: number) => `#${i + 1} ${cidrText(blocks[i])}`;
+    const lines = overlaps.map(({ outer, inner, duplicate }) => duplicate
+      ? `${label(inner)} duplicates ${label(outer)}`
+      : `${label(outer)} contains ${label(inner)}`);
+    showResult(overlapsResult, `${lines.join('\n')}\n\n${overlaps.length} ${overlaps.length === 1 ? 'overlap' : 'overlaps'}`, true);
+  }
+
+  const updateSubtract = function(): void {
+    const from = parseList(subtractFrom.value);
+    const exclude = parseList(subtractExclude.value);
+    if (from.error || exclude.error) {
+      showResult(subtractResult, (from.error ?? exclude.error)!, true);
+      return;
+    }
+
+    const remaining = subtract(from.blocks, exclude.blocks);
+    showResult(subtractResult, remaining.length === 0 ? 'Nothing is left: the exclusions cover every address.' : blockList(remaining));
+  }
+
   summarizeInput.addEventListener('input', updateSummarize);
   [rangeStart, rangeEnd].forEach(input => input.addEventListener('input', updateRange));
   [containsIp, containsNetwork].forEach(input => input.addEventListener('input', updateContains));
+  overlapsInput.addEventListener('input', updateOverlaps);
+  [subtractFrom, subtractExclude].forEach(input => input.addEventListener('input', updateSubtract));
   updateSummarize();
   updateRange();
   updateContains();
+  updateOverlaps();
+  updateSubtract();
 }
